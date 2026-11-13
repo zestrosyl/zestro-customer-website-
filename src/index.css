@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --zestro-midnight: #101B17;
+    --zestro-charcoal: #1D2922;
+    --zestro-black: #101210;
+    --zestro-gold: #D7A65A;
+    --zestro-ivory: #F3EBDD;
+    --zestro-cream: #E7DFD0;
+    --zestro-secondary: #A9A79F;
+    --zestro-muted-ink: #5B564E;
+    --zestro-white: #FFFFFF;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', 'Noto Sans Bengali', 'Noto Sans Arabic', system-ui, sans-serif;
+    background-color: var(--zestro-ivory);
+    color: var(--zestro-black);
+    overflow-x: clip;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: 'Playfair Display', 'Noto Sans Bengali', 'Noto Sans Arabic', Georgia, serif;
+  }
+
+  .font-mono-tabular {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes zestro-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background-color: #E7DFD0;
+  background-image: linear-gradient(
+    90deg,
+    #E7DFD0 0%,
+    #DDD2BF 45%,
+    #E7DFD0 90%
+  );
+  background-size: 200% 100%;
+  animation: zestro-shimmer 1.6s ease-in-out infinite;
+}
+
+.skeleton-shimmer-dark {
+  background-color: #1D2922;
+  background-image: linear-gradient(
+    90deg,
+    #1D2922 0%,
+    #26362D 45%,
+    #1D2922 90%
+  );
+  background-size: 200% 100%;
+  animation: zestro-shimmer 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer,
+  .skeleton-shimmer-dark {
+    animation: none;
+    background-image: none;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+}

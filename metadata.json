@@ -1,0 +1,6 @@
+{
+  "name": "Zestro — Café & Restaurant",
+  "description": "Modern café and restaurant digital menu, WhatsApp ordering platform, table QR ordering, and real-time restaurant management system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,1292 @@
+PROJECT: ZESTRO — PREMIUM RESTAURANT ORDERING & TABLE MANAGEMENT SYSTEM
+
+Act as a world-class product designer, senior full-stack engineer, restaurant technology consultant, UI/UX specialist and software architect.
+
+Build a complete, professional, production-oriented restaurant website and table management platform for ZESTRO, a modern café and restaurant in Bangladesh.
+
+This is NOT just a landing page or a static menu website. It must be a functional restaurant ordering platform connected to an internal admin dashboard and table management system.
+
+Build the actual working application, not just a visual prototype.
+
+---
+
+1. BRAND IDENTITY AND DESIGN DIRECTION
+
+I am attaching:
+
+- Zestro's official logo.
+- Food menu pages.
+- Beverage menu pages.
+- Promotional posters and branding references.
+
+Study all uploaded references before designing.
+
+Brand colours
+
+Use Zestro's existing visual identity as the foundation:
+
+- Primary: Deep Forest Green (#064B38 approximately).
+- Secondary: Warm Orange / Golden Orange (#F5A02C approximately).
+- Background: Warm Ivory / Cream (#FFF8EC).
+- Dark Text: Deep Charcoal / Coffee Brown.
+- Supporting colours: Muted olive, beige and subtle gold.
+
+Use the uploaded references to refine the final palette.
+
+Design personality
+
+Zestro should look like a premium, modern, welcoming café and restaurant.
+
+Design qualities:
+
+- Modern and elegant.
+- Premium restaurant experience.
+- Beautiful typography.
+- Excellent visual hierarchy.
+- High-quality food presentation.
+- Beautiful spacing and composition.
+- Smooth animations and transitions.
+- Subtle motion graphics.
+- Sophisticated hover effects.
+- Beautiful loading states.
+- Premium-looking navigation.
+- Consistent design system.
+
+Do not make it look like a generic food delivery template.
+
+Do not overcrowd the interface.
+
+Use the uploaded Zestro logo. Do not redesign or distort it. Create light and dark logo treatments only when needed while preserving the original logo proportions and identity.
+
+Use the uploaded promotional posters as visual references only. Do not automatically treat their promotional offers or prices as active offers.
+
+Use appropriate, high-quality food and beverage images. Do not use the entire menu page as an individual product image. Make product images manageable through the admin dashboard.
+
+---
+
+2. APPLICATION ARCHITECTURE
+
+Build two connected interfaces:
+
+A. PUBLIC CUSTOMER WEBSITE
+B. SECURE RESTAURANT ADMIN DASHBOARD
+
+Preferred technology:
+
+- React.
+- TypeScript.
+- Tailwind CSS.
+- Node.js backend.
+- Firebase Authentication.
+- Cloud Firestore database.
+- Real-time Firestore listeners where appropriate.
+- Framer Motion or an equivalent animation library.
+- Lucide icons.
+- QR code generation library.
+- Reliable form validation.
+
+Use Google AI Studio's supported full-stack environment.
+
+Use Firebase for persistent data, authentication and real-time updates. Configure proper Firestore security rules.
+
+Never expose private credentials, API keys or administrative secrets in frontend code.
+
+Keep the architecture modular and maintainable. Separate components, pages, services, database logic, configuration and types.
+
+If Firebase provisioning requires my approval, clearly show me the setup step.
+
+---
+
+3. CUSTOMER WEBSITE
+
+Create an elegant, mobile-first restaurant website.
+
+A. Navigation
+
+The website header should include:
+
+- Zestro logo.
+- Home.
+- Menu.
+- Offers.
+- About Us.
+- Contact.
+- Language selector.
+- Shopping cart icon with item count.
+
+On mobile, use a sophisticated hamburger navigation.
+
+Make the navigation sticky with a subtle scroll effect.
+
+B. Homepage
+
+Design a beautiful restaurant homepage containing:
+
+1. Premium hero section.
+   
+   - Large headline.
+   - Attractive restaurant and food imagery.
+   - Order Now button.
+   - Explore Menu button.
+   - Tasteful motion effects.
+
+2. Featured categories.
+   
+   - Burgers.
+   - Pizza.
+   - Fried Chicken.
+   - Rice Bowls.
+   - Meals.
+   - Coffee.
+   - Beverages.
+
+3. Popular items section.
+
+4. Special offers section.
+
+5. Why Choose Zestro section.
+
+6. Restaurant experience / brand story section.
+
+7. Customer reviews section, with editable review content.
+
+8. Location and opening hours section, using information configured by the administrator.
+
+9. Premium footer with contact information and social links.
+
+Do not invent Zestro's address, opening hours or social media links. Make these editable in Settings.
+
+---
+
+4. DIGITAL MENU SYSTEM
+
+This is one of the most important parts of the website.
+
+Build a professional, searchable and filterable digital menu.
+
+Menu features:
+
+- Category-based browsing.
+- Product cards.
+- Product images.
+- Product name.
+- Description.
+- Price in Bangladeshi Taka (৳).
+- Availability status.
+- Customisation option.
+- Quick Add button.
+- View Details button.
+- Search functionality.
+- Category filters.
+- Popular items.
+- Recommended items.
+
+Categories should include:
+
+FOOD:
+
+1. Fries
+2. Wedges
+3. Sandwiches
+4. Pasta
+5. Chowmein
+6. Wings
+7. Fried Chicken
+8. Shawarma / Wrap
+9. Burger
+10. Pizza
+11. Rice Bowl
+12. Meals
+13. Add-ons
+14. Sides
+
+BEVERAGES:
+15. Frappe
+16. Bubble Drinks
+17. Mocktails / Mojito
+18. Smoothie
+19. Iced Coffee
+20. Hot Coffee
+21. Cold Coffee
+22. Shakes
+23. Tea
+24. Add Syrup
+
+Use the attached menu pages as the source of truth for product names and prices.
+
+The initial menu data is listed later in this prompt.
+
+Do not invent products or prices.
+
+Do not silently change any menu price.
+
+---
+
+5. ITEM CUSTOMISATION SYSTEM
+
+EVERY suitable menu item must have a functional customisation interface.
+
+When a customer clicks an item, open a premium product-detail drawer or modal.
+
+Depending on the product, allow:
+
+- Select available size.
+- Select quantity.
+- Select flavour.
+- Select spice level.
+- Select sauce preferences.
+- Add available extras.
+- Remove optional ingredients where applicable.
+- Add special instructions.
+- Add to cart.
+- See updated price before adding.
+
+Examples:
+
+BURGER:
+
+- Choose burger variant.
+- Add sliced cheese.
+- Add extra chicken patty or beef patty.
+- Add sauces if configured.
+- Add special instructions.
+
+PIZZA:
+
+- Choose 8-inch, 10-inch or 12-inch where available.
+- Select available customisations.
+- Add special instructions.
+
+FRIED CHICKEN:
+
+- Choose 2, 4, 6 or 8 pieces where available.
+- Select optional sauces.
+
+COFFEE:
+
+- Choose the available size.
+- Choose syrup.
+- Select sugar level.
+- Select ice preference for iced drinks.
+- Add special instructions.
+
+RICE BOWL:
+
+- Select available preferences.
+- Add special instructions.
+
+IMPORTANT:
+Only show paid customisations that have a configured price. Do not invent extra charges.
+
+All customisation choices and their prices must be manageable by the administrator.
+
+---
+
+6. SIMPLE ORDERING EXPERIENCE
+
+The ordering experience must be extremely simple.
+
+The customer should be able to order without creating an account.
+
+Customer journey:
+
+1. Visit website.
+2. Browse menu.
+3. Select an item.
+4. Customise the item if required.
+5. Add item to cart.
+6. Continue shopping or proceed to checkout.
+7. Select order type.
+8. Enter the minimum required information.
+9. Review order.
+10. Click Place Order.
+11. WhatsApp opens with a complete formatted order message.
+
+One-click ordering
+
+Implement:
+
+- Quick Add directly from menu cards.
+- Order Now for immediate purchase.
+- Add to Cart.
+- Repeat / reorder functionality if customer data is available locally.
+- Persistent cart so refreshing the website does not remove items.
+
+For products that have a required variant, open the relevant customisation interface before adding.
+
+Make the whole process fast and easy on mobile.
+
+---
+
+7. CHECKOUT AND ORDER TYPES
+
+Support three order types:
+
+A. DINE IN
+B. TAKEAWAY
+C. DELIVERY
+
+Use attractive selection cards with clear icons.
+
+Dine In
+
+Required customer fields:
+
+- Name.
+- Phone Number.
+
+When a customer enters from a table-specific QR code, automatically identify and attach the table number.
+
+Do not ask the customer to enter a table number again when the QR code already identifies it.
+
+If the customer enters the website without a table QR code, allow an optional table selection only when necessary.
+
+Takeaway
+
+Required fields:
+
+- Name.
+- Phone Number.
+
+Delivery
+
+Required fields:
+
+- Name.
+- Phone Number.
+- Full Delivery Address.
+
+Keep the checkout form clean and minimal.
+
+Do not request unnecessary information.
+
+Validate Bangladeshi phone numbers.
+
+Make delivery fees, service charges, minimum order amounts and taxes configurable in admin settings. Keep unconfigured charges disabled by default.
+
+---
+
+8. WHATSAPP ORDERING — CRITICAL REQUIREMENT
+
+For the first version, Zestro will accept orders through WhatsApp.
+
+Official WhatsApp order number:
+
++880 1601-987672
+
+Use this WhatsApp link format:
+
+https://wa.me/8801601987672
+
+When the customer presses "Place Order" or "Send Order on WhatsApp":
+
+1. Validate checkout information.
+2. Calculate the final order total.
+3. Generate a unique order reference.
+4. Save an order record in Firestore with status "awaiting_whatsapp_confirmation".
+5. Build a properly formatted WhatsApp message.
+6. Open WhatsApp with the prepared message.
+7. Ask the customer to press Send inside WhatsApp.
+
+Do not claim that the order is confirmed merely because WhatsApp opened.
+
+Show this message to the customer:
+
+"Your order message is ready! Please press SEND in WhatsApp to contact Zestro. Your order will be confirmed once our team accepts it."
+
+WhatsApp message format
+
+Generate a clear message similar to:
+
+Hello Zestro! I would like to place an order.
+
+ORDER REFERENCE: ZES-XXXXXXXX
+
+ORDER TYPE: DINE IN / TAKEAWAY / DELIVERY
+
+CUSTOMER DETAILS:
+Name:
+Phone:
+Address: (Delivery only)
+Table Number: (When available)
+
+ORDER DETAILS:
+
+1. Product Name
+   Variant / Size:
+   Customisations:
+   Special Instructions:
+   Quantity:
+   Unit Price:
+   Total:
+
+2. Product Name
+   Variant / Size:
+   Customisations:
+   Quantity:
+   Unit Price:
+   Total:
+
+Subtotal:
+Delivery Charge:
+Other Charges:
+Discount:
+TOTAL: ৳XXXX
+
+Thank you!
+
+Use properly encoded URL parameters and handle special characters safely.
+
+Prefer a reliable new-tab WhatsApp handoff. Handle browser popup restrictions gracefully.
+
+If saving the order to Firestore fails, do not pretend it was saved. Explain the problem and provide a safe WhatsApp fallback where possible.
+
+Important operational rule
+
+WhatsApp links cannot tell the website whether the customer actually pressed Send or whether Zestro accepted the order.
+
+Therefore:
+
+- Initially save orders as "awaiting_whatsapp_confirmation".
+- Admin staff manually verify the incoming WhatsApp message.
+- Staff can mark the order Confirmed, Preparing, Ready, Completed or Cancelled.
+- Never automatically mark an order as confirmed after opening WhatsApp.
+
+Do not implement a fake WhatsApp API integration. Direct WhatsApp Cloud API automation can be added later.
+
+---
+
+9. MULTILINGUAL SYSTEM
+
+Implement a proper language switching system.
+
+Required languages:
+
+1. English
+2. বাংলা (Bangla)
+3. العربية (Arabic)
+
+The language selector must be visible in the navigation.
+
+Requirements:
+
+- English is the default.
+- Full Bangla interface translations.
+- Full Arabic interface translations.
+- Correct Arabic right-to-left layout.
+- Correct text alignment for each language.
+- Translated navigation.
+- Translated buttons.
+- Translated checkout form.
+- Translated categories.
+- Translated product names and descriptions.
+- Translated error and success messages.
+- Translated order information wherever practical.
+
+Do not merely translate the navigation while keeping the rest of the website in English.
+
+Create a central translation system with reusable language dictionaries.
+
+Keep the language preference saved between visits.
+
+Arabic must correctly switch layout direction to RTL without breaking the design.
+
+The administrator should be able to review and edit menu translations.
+
+Keep prices in BDT (৳) regardless of the selected language.
+
+---
+
+10. TABLE MANAGEMENT SYSTEM
+
+Build a professional restaurant table management module inside the admin dashboard.
+
+This is essential.
+
+Create a visual restaurant floor/table management interface.
+
+Initial sample tables:
+
+- Table 01
+- Table 02
+- Table 03
+- Table 04
+- Table 05
+- Table 06
+- Table 07
+- Table 08
+- Table 09
+- Table 10
+- Table 11
+- Table 12
+
+These are sample tables. The administrator must be able to add, edit, remove and rename tables.
+
+Each table should have a status:
+
+- Available.
+- Occupied.
+- Reserved.
+- Waiting for Order.
+- Needs Cleaning.
+
+Use attractive visual status indicators.
+
+Table dashboard
+
+Display:
+
+- Total tables.
+- Available tables.
+- Occupied tables.
+- Reserved tables.
+- Tables needing cleaning.
+- Active orders associated with tables.
+
+When an administrator clicks a table, open a detailed panel containing:
+
+- Table number.
+- Current status.
+- Current order.
+- Assigned staff member.
+- Customer details if available.
+- Order time.
+- Order total.
+- Order status.
+- Table session history.
+
+Allow staff to:
+
+- Open a table.
+- Assign an order to a table.
+- View the current table order.
+- Add an order internally.
+- Mark a table as occupied.
+- Mark a table as available.
+- Mark a table as needing cleaning.
+- Close a table session.
+
+Keep the table and order status synchronised.
+
+---
+
+11. TABLE QR CODE SYSTEM
+
+Create a unique QR code for every restaurant table.
+
+Examples:
+
+Table 01: /?table=01
+Table 02: /?table=02
+Table 03: /?table=03
+
+When a customer scans a table QR code:
+
+1. Open the Zestro website.
+2. Automatically identify the table number.
+3. Display a small message: "Welcome to Zestro — Table 01."
+4. Browse the menu.
+5. Add products to cart.
+6. Customise products.
+7. Place order through WhatsApp.
+8. Include the table number in the saved order and WhatsApp message.
+
+Create an admin option to:
+
+- Generate all table QR codes.
+- Preview individual QR codes.
+- Download individual QR codes.
+- Download all QR codes in a printable PDF.
+- Print QR table labels.
+
+Each QR code must point to the correct table-specific URL.
+
+Do not rely only on a customer manually typing a table number.
+
+---
+
+12. CALL WAITER FEATURE
+
+For customers ordering from a table QR code, display a discreet and attractive "Call Waiter" button.
+
+When a customer clicks it:
+
+1. Create a waiter-call request in Firestore.
+2. Attach the correct table number.
+3. Save the request time.
+4. Show confirmation to the customer.
+5. Display a real-time alert in the admin dashboard.
+
+Admin dashboard should show:
+
+"Table 05 is requesting a waiter."
+
+Staff can:
+
+- Acknowledge the request.
+- Mark it as Resolved.
+- See which staff member handled it.
+- See request time.
+
+Do not allow duplicate requests to generate unnecessary repeated alerts. Add a cooldown or pending-request check.
+
+---
+
+13. ADMIN DASHBOARD
+
+Create a premium, secure and responsive admin dashboard.
+
+Use a professional desktop sidebar and a responsive mobile navigation.
+
+Dashboard sections:
+
+1. Overview.
+2. Live Orders.
+3. Table Management.
+4. Waiter Calls.
+5. Menu Management.
+6. Categories.
+7. Customisations & Add-ons.
+8. Promotions.
+9. QR Code Manager.
+10. Customers.
+11. Reports & Analytics.
+12. Staff Management.
+13. Restaurant Settings.
+
+Overview dashboard
+
+Display:
+
+- Today's orders.
+- Today's confirmed revenue.
+- Pending WhatsApp orders.
+- Preparing orders.
+- Completed orders.
+- Cancelled orders.
+- Available tables.
+- Occupied tables.
+- Active waiter calls.
+- Best-selling items.
+
+Use attractive cards and useful charts.
+
+Revenue calculations must exclude unconfirmed and cancelled orders.
+
+Use real Firestore data, not hardcoded fake statistics.
+
+When there is no data, show a beautiful empty state.
+
+---
+
+14. LIVE ORDER MANAGEMENT
+
+Create a restaurant order management interface.
+
+Each order should have:
+
+- Unique order ID.
+- Order date and time.
+- Customer name.
+- Phone number.
+- Order type.
+- Table number if applicable.
+- Delivery address if applicable.
+- Ordered products.
+- Product customisations.
+- Quantity.
+- Subtotal.
+- Fees and discounts.
+- Final total.
+- Order status.
+
+Order status workflow:
+
+1. Awaiting WhatsApp Confirmation.
+2. Confirmed.
+3. Preparing.
+4. Ready.
+5. Completed.
+6. Cancelled.
+
+Show orders in a clean list and an optional Kanban-style view.
+
+Admin staff must be able to:
+
+- Open order details.
+- Confirm orders after checking WhatsApp.
+- Update order status.
+- Cancel orders.
+- Search by order number.
+- Filter by order date.
+- Filter by order type.
+- Filter by order status.
+- View customer contact information.
+- Print a receipt.
+
+Use real-time updates.
+
+Clearly distinguish between an unconfirmed WhatsApp order request and an accepted restaurant order.
+
+---
+
+15. RESTAURANT RECEIPT AND KITCHEN TICKET
+
+Implement a professional printable receipt.
+
+Receipt content:
+
+- Zestro logo.
+- Zestro restaurant name.
+- Order reference.
+- Date and time.
+- Order type.
+- Table number, if applicable.
+- Customer details.
+- Product names.
+- Customisations.
+- Quantities.
+- Prices.
+- Subtotal.
+- Other charges.
+- Discounts.
+- Grand total.
+- Thank-you message.
+
+Create:
+
+- Customer receipt.
+- Kitchen preparation ticket.
+
+Use a clean print layout suitable for common receipt printers and A4 printing.
+
+Provide a Print button.
+
+Do not claim a printer is physically connected unless printer integration is actually implemented.
+
+---
+
+16. MENU MANAGEMENT DASHBOARD
+
+Administrator must have complete control over the menu.
+
+Allow:
+
+- Add new products.
+- Edit products.
+- Delete products.
+- Change product images.
+- Edit English, Bangla and Arabic names.
+- Edit descriptions.
+- Change prices.
+- Add different product sizes.
+- Add customisation groups.
+- Add extra charges.
+- Set product availability.
+- Mark products as sold out.
+- Enable / disable products.
+- Change product categories.
+- Rearrange product display order.
+- Mark products as popular.
+- Mark products as featured.
+
+Changes should appear on the public menu without requiring code modifications.
+
+Add confirmation before deleting important menu data.
+
+---
+
+17. REPORTS AND ANALYTICS
+
+Create an analytics section.
+
+Reports:
+
+- Daily sales.
+- Weekly sales.
+- Monthly sales.
+- Total orders.
+- Completed orders.
+- Cancelled orders.
+- Average order value.
+- Best-selling products.
+- Best-performing categories.
+- Order type comparison.
+- Table utilisation.
+- Peak ordering times.
+
+Allow date-range filters.
+
+Allow CSV export.
+
+Make the report dashboard visually professional and easy to understand.
+
+Do not include unconfirmed WhatsApp requests in confirmed revenue.
+
+---
+
+18. RESTAURANT SETTINGS
+
+Create a settings section.
+
+Administrator can edit:
+
+- Restaurant name.
+- Restaurant logo.
+- WhatsApp order number.
+- Contact number.
+- Address.
+- Opening hours.
+- Social media links.
+- Delivery settings.
+- Delivery charges.
+- Minimum order value.
+- Taxes.
+- Service charges.
+- Currency.
+- Language defaults.
+- Table configuration.
+- Menu availability.
+- Restaurant accepting-orders status.
+
+Keep the WhatsApp number editable but preconfigure it as:
+
++880 1601-987672
+
+---
+
+19. ADMIN AUTHENTICATION AND SECURITY
+
+This is a real business application, so security is essential.
+
+Implement Firebase Authentication.
+
+Requirements:
+
+- Secure admin login.
+- No public admin registration.
+- Admin allowlist using server-side configuration such as ADMIN_EMAILS.
+- Role-based access for Admin, Manager and Staff.
+- Protect all admin routes.
+- Validate admin permissions on the server and in Firestore rules.
+- Customers must not be able to access internal dashboard data.
+- Customers must not be able to change order status.
+- Staff must not be able to modify protected settings unless authorised.
+- Never put admin credentials in frontend code.
+- Never use an insecure hardcoded admin password.
+
+Provide clear instructions for configuring the first administrator.
+
+Use Firestore security rules that prevent unauthorised reading, modifying or deleting of sensitive records.
+
+---
+
+20. DATABASE STRUCTURE
+
+Design a clean and scalable Firestore data model.
+
+Use appropriate collections for:
+
+- users
+- admins
+- staff
+- categories
+- products
+- customisationGroups
+- orders
+- customers
+- tables
+- tableSessions
+- waiterCalls
+- promotions
+- restaurantSettings
+
+Use timestamps for important events.
+
+Store order item names, selected variants and prices as snapshots when an order is created. Editing the menu later must not change historical order receipts.
+
+Implement reliable total calculation on the server. Do not trust totals supplied by the frontend.
+
+Use real-time listeners only where needed.
+
+Add proper loading, error and empty states.
+
+---
+
+21. RESPONSIVE DESIGN AND PERFORMANCE
+
+The customer website must be mobile-first.
+
+Test:
+
+- Android phones.
+- iPhones.
+- Tablets.
+- Desktop.
+- Large screens.
+
+The customer ordering process must be particularly easy to use on a mobile device.
+
+Performance:
+
+- Optimise images.
+- Use lazy loading.
+- Avoid unnecessary rerenders.
+- Keep animations smooth.
+- Avoid excessive bundles.
+- Use skeleton loading states.
+- Preserve cart data.
+- Provide useful error messages.
+- Handle slow internet connections gracefully.
+
+Accessibility:
+
+- Clear contrast.
+- Keyboard accessibility.
+- Proper labels.
+- Focus states.
+- Accessible modal and drawer behaviour.
+- Reduced-motion support.
+
+---
+
+22. ANIMATION AND MICRO-INTERACTIONS
+
+Use high-quality, restrained motion design.
+
+Examples:
+
+- Smooth hero entrance.
+- Subtle image reveal.
+- Category navigation animation.
+- Elegant product card hover.
+- Animated cart count.
+- Add-to-cart feedback.
+- Smooth cart drawer.
+- Modal transition.
+- Button interaction feedback.
+- Dashboard chart animation.
+- Table status transition.
+- Toast notifications.
+- Beautiful page transitions.
+
+Do not make animations excessive or distracting.
+
+Respect reduced-motion preferences.
+
+---
+
+23. INITIAL MENU DATA — ZESTRO
+
+Use the following extracted menu data together with the attached original menu pages.
+
+The attached menu pages remain the source of truth. If any extraction differs from the uploaded references, flag it for administrator review instead of silently changing the menu.
+
+All prices below are in BDT (৳).
+
+FRIES
+
+- Classic French Fries — 190
+- Hot Fries — 210
+- Grilled Loaded Fries — 400
+
+WEDGES
+
+- Classic Potato Wedges — 180
+- BBQ Wedges — 220
+
+SANDWICHES
+
+- Classic Grilled Chicken Sandwich — 260
+- Creamy Cheese Blast Sub — 300
+- Italian Sub Sandwich — 380
+
+PASTA
+
+- Regular Chicken Pasta — 290
+- Alfredo Cream Pasta — 350
+- Oven Baked Supreme Pasta — 390
+
+CHOWMEIN
+
+- Chicken Chowmein (1:2) — 320
+- Zestro Special Chowmein (1:2) — 390
+
+WINGS
+
+- Smoky BBQ Wings (6 pcs) — 360
+- Crispy Chicken Wings (6 pcs) — 360
+- Hot Wings (6 pcs) — 360
+
+FRIED CHICKEN
+
+- Crispy Fried Chicken: 2 pcs — 280; 4 pcs — 440; 6 pcs — 620; 8 pcs — 800
+- Thai Fried Chicken: 2 pcs — 280; 4 pcs — 440; 6 pcs — 620; 8 pcs — 800
+- Boneless Chicken Strips — 350
+- Chicken Cheese Balls — 400
+
+SHAWARMA / WRAP
+
+- Grilled Chicken Wrap — 280
+- Spicy Chicken Wrap — 300
+- Zestro Signature Wrap — 340
+
+BURGER
+
+- Regular Chicken Burger — 270
+- Chicken Cheese Burger — 300
+- Crispy Chicken Burger — 340
+- Smoky BBQ Chicken Burger — 340
+- Beef Cheese Burger — 380
+- Zestro Special Burger — 420
+
+BURGER / FOOD ADD-ONS
+
+- Tomato Ketchup — 20
+- Zestro Sauce — 30
+- Sliced Cheese — 40
+- Chicken Patty — 130
+- Beef Patty — 180
+
+PIZZA
+
+- Classic Margherita Pizza: 8-inch — 420; 10-inch — 720; 12-inch — 820
+- Mexican Spicy Chicken Pizza: 8-inch — 450; 10-inch — 750; 12-inch — 870
+- Smoky BBQ Chicken Pizza: 8-inch — 520; 10-inch — 870; 12-inch — 980
+- Chicken Sausage Delight Pizza: 8-inch — 540; 10-inch — 890; 12-inch — 990
+- Four Seasons Special Pizza: 8-inch — 580; 10-inch — 890; 12-inch — 1020
+- Zestro Special Pizza: 10-inch — 940; 12-inch — 1080
+- Deep Dish Pizza: 12-inch — 1350
+
+RICE BOWL
+
+- Crispy Chicken Bowl — 260
+- BBQ Chicken Bowl — 270
+- Sizzling Chicken Bowl — 280
+- Katsu Chicken Bowl — 290
+
+MEALS
+
+- Signature Tandoori Chicken — 380
+- Smoky BBQ Chicken — 460
+- Inferno Peri Peri Chicken — 480
+- Chicken Steak — 490
+- Italian Stuffed Chicken — 530
+
+MEAL SIDES
+
+The menu specifies Any 2 sides:
+
+- Hot Fries / French Fries
+- Sautéed Vegetables
+- Mashed Potato
+- Thai Fried Rice
+
+Create the side-selection functionality so customers can select two sides with the meal, without charging extra unless configured by the administrator.
+
+FRAPPE
+
+- Mocha Frappe — 310
+- Caramel Frappe — 310
+- Hazelnut Frappe — 310
+- Cookies N Cream Frappe — 300
+
+BUBBLE DRINKS
+
+- Mango — 350
+- Blueberry — 340
+- Blue Coconut — 340
+- Raspberry — 340
+- Strawberry — 340
+
+MOCKTAILS / MOJITO
+
+- Virgin Mojito — 270
+- Strawberry — 270
+- Raspberry — 270
+- Blueberry — 280
+- Blue Ocean — 330
+- Mango — 290
+- Orange — 290
+- Pink Guava & Strawberry — 300
+- Pinacolada — 300
+- Green Apple — 300
+
+SMOOTHIE
+
+- Strawberry — 320
+- Mango — 330
+- Blueberry — 320
+- Coconut — 330
+
+ICED COFFEE
+
+- Iced Chai Latte — 240 / 320
+- Iced Americano — 180 / 250
+- Affogato — 240
+- Iced Cappuccino — 220 / 320
+- Iced Latte — 220 / 320
+- Iced Mocha — 240 / 340
+- Iced Spanish Latte — 250 / 340
+- Iced Matcha Latte — 250
+- Iced Caramel Macchiato — 260
+- Iced Flat White — 340
+- Iced Tonic Espresso — 200
+
+HOT COFFEE
+
+- Espresso — 160 / 220
+- Americano — 190 / 250
+- Hot Chocolate — 220
+- Cappuccino — 220 / 330
+- Latte — 220 / 330
+- Spanish Latte — 240 / 330
+- Mocha — 250 / 330
+- Chai Latte — 240 / 340
+- Macchiato — 180 / 250
+- Flat White — 340
+
+COLD COFFEE
+
+- Chocolate — 180
+- Oreo Blended — 200
+- Kitkat — 220
+
+SHAKES
+
+- Chocolate — 300
+- Caramel — 300
+- Vanilla — 300
+- Strawberry — 300
+- Mango — 360
+- Blueberry — 330
+- Nutella — 330
+- Chocolate Malt Shake — 330
+- Oreo — 300
+- Hazelnut — 320
+- Peanut Butter — 330
+- Peanut Butter Jelly — 360
+- Peanut Butter Malt — 360
+- Peanut Butter Oreo — 360
+- Peanut Butter Blueberry — 380
+
+TEA
+
+- English Tea — 140
+- London Fog Tea — 150
+- Earl Grey Tea — 140
+- Lemon Tea — 170
+- Iced Lemon Tea — 200
+- Iced Peach Tea — 220
+- Iced Raspberry Tea — 220
+
+ADD SYRUP
+
+- Vanilla — 99
+- Caramel — 99
+- Hazelnut — 99
+- Coconut — 99
+
+IMPORTANT MENU DATA RULES:
+
+1. For coffee items with two prices, create two editable variants labelled "Variant 1" and "Variant 2" until the restaurant confirms their actual size names.
+2. Do not invent size names.
+3. For items with three pizza prices, use the exact 8-inch, 10-inch and 12-inch variants.
+4. For the Crispy and Thai Fried Chicken products, use the exact piece-count options.
+5. Do not apply the meal side-selection rule to unrelated products.
+6. Do not assign every add-on to every product automatically. Allow the administrator to configure which add-ons belong to which products.
+7. All seeded data must remain editable in the admin dashboard.
+
+---
+
+24. FUNCTIONAL TESTING AND QUALITY CONTROL
+
+Before considering the project complete, test the actual application.
+
+CUSTOMER TESTS:
+
+- Website loads successfully.
+- Logo displays correctly.
+- Navigation works.
+- All menu categories display.
+- All initial menu prices are correct.
+- Search works.
+- Category filters work.
+- Product details work.
+- Customisations work.
+- Pricing changes correctly when a paid option is selected.
+- Cart works.
+- Cart persists after refresh.
+- Customer can select Dine In.
+- Customer can select Takeaway.
+- Customer can select Delivery.
+- Correct checkout fields appear for each order type.
+- Bangla language works throughout the website.
+- English language works throughout the website.
+- Arabic RTL layout works.
+- WhatsApp message contains complete order information.
+- WhatsApp number is correct.
+- Invalid phone numbers are rejected.
+- Missing required information produces useful validation.
+- Duplicate accidental submissions are handled safely.
+
+ADMIN TESTS:
+
+- Admin authentication works.
+- Unauthorised visitors cannot enter the dashboard.
+- Dashboard data comes from Firestore.
+- Orders appear in the order list.
+- Pending WhatsApp orders are clearly identified.
+- Staff can confirm an order.
+- Staff can update order status.
+- Staff can print a receipt.
+- Staff can manage tables.
+- Table QR codes open the correct table.
+- Waiter calls appear in real time.
+- Admin can add and edit menu products.
+- Admin can mark products unavailable.
+- Admin can edit prices.
+- Admin can edit translations.
+- Analytics use actual order data.
+- Firestore security rules prevent unauthorised changes.
+
+Fix all build errors, broken routes, missing imports, TypeScript errors, nonfunctional buttons and console errors.
+
+Do not leave unfinished buttons or decorative features pretending to work.
+
+---
+
+25. FINAL DELIVERY EXPECTATIONS
+
+Deliver a complete working Zestro restaurant platform.
+
+The finished application must include:
+
+1. Premium Zestro customer website.
+2. Full digital food and beverage menu.
+3. Functional customisation system.
+4. Shopping cart.
+5. Simple checkout.
+6. Dine-in, takeaway and delivery ordering.
+7. WhatsApp order handoff.
+8. English, Bangla and Arabic.
+9. Secure admin login.
+10. Admin overview dashboard.
+11. Live order management.
+12. Restaurant table management.
+13. Individual table QR codes.
+14. Call waiter functionality.
+15. Menu and customisation management.
+16. Printable customer receipts.
+17. Kitchen tickets.
+18. Reports and analytics.
+19. Restaurant settings.
+20. Firebase integration and secure database rules.
+
+Build all essential features, not merely a homepage demonstration.
+
+Prioritise working functionality, excellent usability, security, consistency and visual quality.
+
+If an external service requires credentials or configuration, create the integration correctly and tell me exactly what I need to configure. Never fake a successful integration.
+
+Start by analysing the attached Zestro brand assets and building the complete application.
