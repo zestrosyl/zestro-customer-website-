@@ -1,3 +1,9 @@
+import IMG_HERO from '../assets/images/zestro_hero_feast_1794594788896.jpg';
+import IMG_BURGER from '../assets/images/zestro_burger_signature_1794594788162.jpg';
+import IMG_PIZZA from '../assets/images/zestro_pizza_artisan_1794594789442.jpg';
+import IMG_CHICKEN_MEALS from '../assets/images/zestro_fried_chicken_meals_1794594790682.jpg';
+import IMG_BOWL_PASTA from '../assets/images/zestro_rice_bowl_pasta_1794594789487.jpg';
+import IMG_BEVERAGES from '../assets/images/zestro_coffee_beverages_1794594791369.jpg';
 import {
   Category,
   CustomisationGroup,
