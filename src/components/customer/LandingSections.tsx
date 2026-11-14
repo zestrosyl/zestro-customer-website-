@@ -33,45 +33,37 @@ interface LandingSectionsProps {
 export const FeaturedCategoriesStrip: React.FC<{
   onSelectCategoryAndScroll: (categoryId: string) => void;
 }> = ({ onSelectCategoryAndScroll }) => {
-  const { language, t, isRtl } = useStore();
+  const { language, t, isRtl, categories, products, catalogLoading } = useStore();
 
-  const highlights = [
-    {
-      id: 'burger',
-      img: IMG_BURGER,
-      label: { en: 'Burgers', bn: 'বার্গার', ar: 'برجر' },
-    },
-    {
-      id: 'pizza',
-      img: IMG_PIZZA,
-      label: { en: 'Pizza', bn: 'পিজ্জা', ar: 'بيتزا' },
-    },
-    {
-      id: 'fried-chicken',
-      img: IMG_CHICKEN_MEALS,
-      label: { en: 'Fried Chicken', bn: 'ফ্রাইড চিকেন', ar: 'دجاج مقلي' },
-    },
-    {
-      id: 'rice-bowl',
-      img: IMG_BOWL_PASTA,
-      label: { en: 'Rice Bowls', bn: 'রাইস বোল', ar: 'أطباق الأرز' },
-    },
-    {
-      id: 'meals',
-      img: IMG_CHICKEN_MEALS,
-      label: { en: 'Meals', bn: 'মিলস', ar: 'وجبات' },
-    },
-    {
-      id: 'hot-coffee',
-      img: IMG_BEVERAGES,
-      label: { en: 'Coffee', bn: 'কফি', ar: 'قهوة' },
-    },
-    {
-      id: 'mocktails-mojito',
-      img: IMG_BEVERAGES,
-      label: { en: 'Beverages', bn: 'পানীয়', ar: 'مشروبات' },
-    },
-  ];
+  const activeCategories = categories
+    .filter((c) => c.active)
+    .sort((a, b) => a.displayOrder - b.displayOrder)
+    .slice(0, 7);
+
+  if (!catalogLoading && activeCategories.length === 0) {
+    return null;
+  }
+
+  const pickCategoryImage = (categoryId: string, nameEn: string, type: 'food' | 'beverage') => {
+    const prodWithImg = products.find(
+      (p) => p.categoryId === categoryId && p.available && p.image && p.image.trim()
+    );
+    if (prodWithImg?.image) return prodWithImg.image;
+    const lower = nameEn.toLowerCase();
+    if (type === 'beverage' || lower.includes('coffee') || lower.includes('drink') || lower.includes('beverage')) {
+      return IMG_BEVERAGES;
+    }
+    if (lower.includes('pizza')) return IMG_PIZZA;
+    if (lower.includes('burger')) return IMG_BURGER;
+    if (lower.includes('bowl') || lower.includes('pasta') || lower.includes('rice')) return IMG_BOWL_PASTA;
+    return IMG_CHICKEN_MEALS;
+  };
+
+  const highlights = activeCategories.map((cat) => ({
+    id: cat.id,
+    img: pickCategoryImage(cat.id, cat.name.en, cat.type),
+    label: cat.name,
+  }));
 
   return (
     <section
@@ -329,8 +321,9 @@ export const PopularAndOffersSection: React.FC<LandingSectionsProps> = ({
 
 export const AboutReviewsContactFooter: React.FC<{
   onNavigateRoute?: (path: string, sectionId: string) => void;
-}> = ({ onNavigateRoute }) => {
-  const { language, t, settings } = useStore();
+  showGallery?: boolean;
+}> = ({ onNavigateRoute, showGallery = true }) => {
+  const { language, t, settings, gallery } = useStore();
 
   const rawPhone = (settings.contactPhone || settings.whatsappNumber || '+8801601987672').replace(
     /[^\d+]/g,
@@ -352,6 +345,46 @@ export const AboutReviewsContactFooter: React.FC<{
 
   return (
     <>
+      {/* Live R2 Atmosphere Gallery (when configured in Admin) */}
+      {showGallery && gallery.length > 0 && (
+        <section
+          id="gallery"
+          className="scroll-mt-20 py-16 sm:py-20 bg-[#E7DFD0] border-b border-[#101B17]/10"
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            <div className="space-y-2">
+              <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#101210]">
+                Atmosphere &amp; Culinary Gallery
+              </h2>
+              <p className="text-sm text-[#5B564E]">
+                Inside the Zestro dining room, kitchen craft, and espresso bar.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {gallery.slice(0, 8).map((photo) => (
+                <figure
+                  key={photo.id}
+                  className="group relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#101B17] border border-[#101B17]/12 shadow-sm"
+                >
+                  <SafeImage
+                    src={photo.imageUrl}
+                    alt={photo.title}
+                    darkFallback
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <figcaption className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-[#101210]/90 via-[#101210]/40 to-transparent text-[#F3EBDD]">
+                    <p className="text-xs sm:text-sm font-semibold truncate">{photo.title}</p>
+                    {photo.caption && (
+                      <p className="text-[11px] text-[#F3EBDD]/80 truncate">{photo.caption}</p>
+                    )}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* About Us & Culinary Philosophy — Dark Forest Charcoal Band */}
       <section
         id="about"

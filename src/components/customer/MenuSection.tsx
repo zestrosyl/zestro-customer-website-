@@ -1,6 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowUpDown, Check, ChevronDown, Loader2, Plus, Search, SlidersHorizontal, X } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowUpDown,
+  Check,
+  ChevronDown,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Search,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { getLocalized } from '../../i18n/translations';
 import type { Product } from '../../types';
@@ -33,7 +44,10 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
     t,
     categories,
     products,
+    customisationGroups,
     catalogLoading,
+    catalogError,
+    reloadCatalog,
     addToCart,
     settings,
   } = useStore();
@@ -164,8 +178,15 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
 
   const handleQuickAdd = (product: Product) => {
     if (!product.available || product.soldOut) return;
+    const hasRequiredGroup = Boolean(
+      product.customisationGroupIds?.some((gid) =>
+        customisationGroups.some((g) => g.id === gid && g.required)
+      )
+    );
     const requiresCustomiser =
-      Boolean(product.variants && product.variants.length > 0) || Boolean(product.mealSideRule);
+      Boolean(product.variants && product.variants.length > 0) ||
+      Boolean(product.mealSideRule) ||
+      hasRequiredGroup;
     if (requiresCustomiser) {
       onOpenProduct(product);
       return;
@@ -414,6 +435,32 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
               ))}
             </div>
           </div>
+        ) : catalogError ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            role="alert"
+            className="bg-white rounded-2xl border border-red-300/80 p-10 sm:p-12 text-center space-y-4 shadow-sm"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-200 text-red-700 flex items-center justify-center mx-auto">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div className="space-y-1.5 max-w-lg mx-auto">
+              <p className="font-display text-xl font-bold text-[#101210]">
+                Live Menu Temporarily Unavailable
+              </p>
+              <p className="text-sm text-[#5B564E]">{catalogError}</p>
+            </div>
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.96 }}
+              onClick={reloadCatalog}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold bg-[#101B17] text-[#F3EBDD] rounded-xl hover:bg-[#1D2922] transition-colors min-h-[40px] cursor-pointer"
+            >
+              <RefreshCw className="w-4 h-4 text-[#D7A65A]" />
+              <span>Retry Live Menu</span>
+            </motion.button>
+          </motion.div>
         ) : filteredProducts.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}

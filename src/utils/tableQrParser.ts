@@ -4,38 +4,42 @@ export interface ParsedTableQr {
 }
 
 const VALID_ID_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function normalizeTableToken(rawToken: string): ParsedTableQr | null {
   const trimmed = rawToken.trim();
   if (!trimmed) return null;
+
+  // Preserve full D1 UUID if encoded directly in QR payload
+  if (UUID_REGEX.test(trimmed)) {
+    return {
+      tableId: trimmed,
+      tableNumber: trimmed,
+    };
+  }
 
   const withoutPrefix = trimmed.replace(/^table[-_\s]*/i, '');
   if (!withoutPrefix || !VALID_ID_REGEX.test(withoutPrefix)) {
     return null;
   }
 
-  const paddedNumber = /^\d+$/.test(withoutPrefix)
-    ? withoutPrefix.padStart(2, '0')
-    : withoutPrefix;
-
-  const candidateId = `table-${paddedNumber}`;
-  if (!VALID_ID_REGEX.test(candidateId)) {
-    return null;
-  }
+  const normalizedNumber = /^\d+$/.test(withoutPrefix)
+    ? `T-${withoutPrefix.padStart(2, '0')}`
+    : withoutPrefix.toUpperCase();
 
   return {
-    tableId: candidateId,
-    tableNumber: paddedNumber,
+    tableId: trimmed,
+    tableNumber: normalizedNumber,
   };
 }
 
 /**
  * Parses table-specific QR payloads from Zestro table QR codes or manual table input:
- * - Full URLs: https://.../?table=04 or https://.../?table=table-04
- * - Relative URLs / query strings: /?table=04, ?table=04, table=04
- * - Path segments: /table/04 or /tables/table-04
- * - JSON strings: {"tableId":"table-04","tableNumber":"04"} or {"table":"04"}
- * - Direct table IDs or numbers: table-04, 04, 4
+ * - Full URLs: https://.../?table=T-04, https://.../menu?table=04
+ * - Relative URLs / query strings: /menu?table=T-04, ?table=04, table=04
+ * - Path segments: /table/T-04 or /tables/04
+ * - JSON strings: {"tableId":"...","tableNumber":"T-04"} or {"table":"04"}
+ * - Direct table IDs or numbers: T-04, table-04, 04, 4, or UUID
  */
 export function parseTableQrPayload(rawValue: string): ParsedTableQr | null {
   const input = rawValue.trim();
@@ -49,14 +53,17 @@ export function parseTableQrPayload(rawValue: string): ParsedTableQr | null {
         tableNumber?: unknown;
         table?: unknown;
       };
-      const candidate =
-        typeof obj.tableId === 'string' && obj.tableId.trim()
-          ? obj.tableId
-          : typeof obj.tableNumber === 'string' && obj.tableNumber.trim()
-          ? obj.tableNumber
+      const idStr = typeof obj.tableId === 'string' && obj.tableId.trim() ? obj.tableId.trim() : '';
+      const numStr =
+        typeof obj.tableNumber === 'string' && obj.tableNumber.trim()
+          ? obj.tableNumber.trim()
           : typeof obj.table === 'string' && obj.table.trim()
-          ? obj.table
-          : null;
+          ? obj.table.trim()
+          : '';
+      if (idStr && numStr && VALID_ID_REGEX.test(idStr) && VALID_ID_REGEX.test(numStr)) {
+        return { tableId: idStr, tableNumber: numStr.toUpperCase() };
+      }
+      const candidate = idStr || numStr;
       if (candidate) {
         return normalizeTableToken(candidate);
       }
@@ -66,7 +73,7 @@ export function parseTableQrPayload(rawValue: string): ParsedTableQr | null {
   }
 
   // 2. Try URL / query parameter (?table=...)
-  if (input.includes('table=') || /^https?:\/\//i.test(input) || input.startsWith('/')) {
+  if (input.includes('table') || /^https?:\/\//i.test(input) || input.startsWith('/')) {
     try {
       const parsedUrl = new URL(
         input.startsWith('http://') || input.startsWith('https://')
@@ -105,6 +112,6 @@ export function parseTableQrPayload(rawValue: string): ParsedTableQr | null {
     return null;
   }
 
-  // 5. Direct table ID or table number (e.g. "table-04", "04", "4")
+  // 5. Direct table ID or table number (e.g. "T-04", "table-04", "04", "4")
   return normalizeTableToken(input);
 }

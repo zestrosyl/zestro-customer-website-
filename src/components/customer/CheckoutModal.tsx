@@ -30,9 +30,10 @@ interface CheckoutModalProps {
   onOpenQrScanner?: () => void;
 }
 
-function isValidBdPhone(phone: string): boolean {
+function isValidCustomerPhone(phone: string): boolean {
   const cleaned = phone.replace(/[\s\-()]/g, '');
-  return /^(\+?880|0)1[3-9]\d{8}$/.test(cleaned);
+  if (/^(\+?880|0)1[3-9]\d{8}$/.test(cleaned)) return true;
+  return /^\+?[1-9]\d{7,14}$/.test(cleaned);
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
@@ -114,24 +115,33 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   }, [promotions, appliedPromoCode]);
 
   const deliveryFee = orderType === 'delivery' ? Number(settings.deliveryFee) || 0 : 0;
-  const serviceCharge =
-    settings.serviceChargePercent > 0
-      ? Math.round((cartSubtotal * settings.serviceChargePercent) / 100)
-      : 0;
-  const taxAmount =
-    settings.taxPercent > 0 ? Math.round((cartSubtotal * settings.taxPercent) / 100) : 0;
 
   let promoDiscountAmount = 0;
   if (activePromo && cartSubtotal >= (Number(activePromo.minOrderAmount) || 0)) {
-    promoDiscountAmount =
+    const subtotalMinor = Math.round(cartSubtotal * 100);
+    const discountMinor =
       activePromo.discountType === 'percent'
-        ? Math.round((cartSubtotal * Number(activePromo.discountValue)) / 100)
-        : Math.min(cartSubtotal, Number(activePromo.discountValue));
+        ? Math.round((subtotalMinor * Number(activePromo.discountValue)) / 100)
+        : Math.min(subtotalMinor, Math.round(Number(activePromo.discountValue) * 100));
+    promoDiscountAmount = Number((discountMinor / 100).toFixed(2));
   }
+
+  const discountedSubtotalMinor = Math.max(
+    0,
+    Math.round(cartSubtotal * 100) - Math.round(promoDiscountAmount * 100)
+  );
+  const serviceCharge =
+    orderType === 'dine_in' && settings.serviceChargePercent > 0
+      ? Number((Math.round((discountedSubtotalMinor * settings.serviceChargePercent) / 100) / 100).toFixed(2))
+      : 0;
+  const taxAmount =
+    settings.taxPercent > 0
+      ? Number((Math.round((discountedSubtotalMinor * settings.taxPercent) / 100) / 100).toFixed(2))
+      : 0;
 
   const preLoyaltyTotal = Math.max(
     0,
-    cartSubtotal + deliveryFee + serviceCharge + taxAmount - promoDiscountAmount
+    Number((cartSubtotal - promoDiscountAmount + deliveryFee + serviceCharge + taxAmount).toFixed(2))
   );
 
   // Loyalty redemption rules: Min order ৳399, Max 80% of available points, 10 points = ৳1
@@ -202,12 +212,24 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       setErrorMsg(t.checkout.notAccepting);
       return;
     }
+    if (orderType === 'dine_in' && settings.qrTableOrderingEnabled === false) {
+      setErrorMsg('Dine-in table ordering is currently disabled by the restaurant.');
+      return;
+    }
+    if (orderType !== 'dine_in' && settings.onlineOrderingEnabled === false) {
+      setErrorMsg('Online takeaway and delivery ordering is currently paused.');
+      return;
+    }
     if (!customerName.trim()) {
       setErrorMsg(t.checkout.errors.nameRequired);
       return;
     }
-    if (!isValidBdPhone(customerPhone)) {
+    if (!isValidCustomerPhone(customerPhone)) {
       setErrorMsg(t.checkout.errors.phoneInvalid);
+      return;
+    }
+    if (orderType === 'dine_in' && !detectedTableNumber && !manualTableNumber.trim()) {
+      setErrorMsg('Please scan your table QR code or enter your dining table number.');
       return;
     }
     if (orderType === 'delivery' && !deliveryAddress.trim()) {

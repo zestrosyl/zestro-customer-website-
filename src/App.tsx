@@ -36,7 +36,15 @@ function sectionIdFromCustomerPathname(pathname: string): string {
 }
 
 const ZestroContent: React.FC = () => {
-  const { toast, dismissToast, customerUser } = useStore();
+  const { toast, dismissToast, customerUser, homepage } = useStore();
+  const isSectionVisible = useCallback(
+    (sectionId: string) => {
+      if (!homepage?.sections || !Array.isArray(homepage.sections)) return true;
+      const found = homepage.sections.find((s) => s.id === sectionId);
+      return found ? Boolean(found.visible) : true;
+    },
+    [homepage]
+  );
   const [activePath, setActivePath] = useState<string>(() => {
     const clean = window.location.pathname.replace(/\/+$/, '').toLowerCase();
     return clean === '/menu' || clean === '/offers' || clean === '/about' || clean === '/contact'
@@ -134,10 +142,12 @@ const ZestroContent: React.FC = () => {
           onExploreMenu={() => scrollToCustomerSection('signature')}
           onOpenQrScanner={() => setQrScannerOpen(true)}
         />
-        <SignatureShowcase
-          onOpenProduct={(prod) => setActiveProduct(prod)}
-          onSelectCategoryAndScroll={handleSelectCategoryAndScroll}
-        />
+        {isSectionVisible('signature') && (
+          <SignatureShowcase
+            onOpenProduct={(prod) => setActiveProduct(prod)}
+            onSelectCategoryAndScroll={handleSelectCategoryAndScroll}
+          />
+        )}
         <FeaturedCategoriesStrip
           onSelectCategoryAndScroll={handleSelectCategoryAndScroll}
         />
@@ -146,15 +156,22 @@ const ZestroContent: React.FC = () => {
           onSelectCategory={setSelectedCategoryId}
           onOpenProduct={(prod) => setActiveProduct(prod)}
         />
-        <BeverageSection
-          onSelectCategoryAndScroll={handleSelectCategoryAndScroll}
-          onOpenProduct={(prod) => setActiveProduct(prod)}
+        {isSectionVisible('beverage') && (
+          <BeverageSection
+            onSelectCategoryAndScroll={handleSelectCategoryAndScroll}
+            onOpenProduct={(prod) => setActiveProduct(prod)}
+          />
+        )}
+        {isSectionVisible('promotions') && (
+          <PopularAndOffersSection
+            onSelectCategoryAndScroll={handleSelectCategoryAndScroll}
+            onOpenProduct={(prod) => setActiveProduct(prod)}
+          />
+        )}
+        <AboutReviewsContactFooter
+          onNavigateRoute={handleNavigateCustomerRoute}
+          showGallery={isSectionVisible('gallery')}
         />
-        <PopularAndOffersSection
-          onSelectCategoryAndScroll={handleSelectCategoryAndScroll}
-          onOpenProduct={(prod) => setActiveProduct(prod)}
-        />
-        <AboutReviewsContactFooter onNavigateRoute={handleNavigateCustomerRoute} />
       </main>
 
       <ProductCustomiseModal
