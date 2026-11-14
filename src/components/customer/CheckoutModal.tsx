@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
+import { API_BASE } from '../../services/liveApi';
 import {
   buildWhatsappMessage,
   buildWhatsappUrl,
@@ -239,9 +240,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
-      const prepRes = await fetch('/api/orders/prepare', {
+      const prepRes = await fetch(`${API_BASE}/api/orders/prepare`, {
         method: 'POST',
-        headers,
+        headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() },
         body: JSON.stringify({
           orderType,
           customerName: customerName.trim(),
@@ -251,6 +252,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           tableNumber: effectiveTableNumber,
           promoCode: appliedPromoCode,
           redeemPoints: validRedeemedPoints,
+          notes: orderNotes.trim(),
           items: cart.map((ci) => ({
             productId: ci.productId,
             variantId: ci.variantId,
@@ -293,8 +295,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
       const whatsappUrl = buildWhatsappUrl(prepData.whatsappNumber, whatsappMessage);
 
-      const saveWarning = 'Order persistence will be enabled when the Cloudflare backend is connected.';
-      const createdOrderId = `ord_local_${Date.now()}`;
+      const createdOrderId = prepData.orderId || `ord_local_${Date.now()}`;
 
       addOrderHistoryEntry({
         orderId: createdOrderId,
@@ -320,7 +321,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       setCompletedState({
         orderRef: prepData.orderRef,
         whatsappUrl,
-        saveWarning,
       });
     } catch {
       setErrorMsg('Network error preparing your order. Please try again.');
