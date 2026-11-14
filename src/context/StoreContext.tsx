@@ -10,6 +10,7 @@ import {
 } from '../data/initialMenu';
 import { Dictionary, TRANSLATIONS } from '../i18n/translations';
 import { parseTableQrPayload } from '../utils/tableQrParser';
+import { API_BASE, postJson } from '../services/liveApi';
 
 import type {
   CartItem,
@@ -239,8 +240,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { setCustomerAuthLoading(false); }, []);
 
   useEffect(() => {
-    // Static starter catalogue: data is loaded from src/data/initialMenu.ts.
-    setCatalogLoading(false);
+    let active = true;
+    fetch(`${API_BASE}/api/catalog`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Catalog request failed (${response.status})`);
+        return response.json();
+      })
+      .then((data: { categories?: Category[]; products?: Product[]; customisationGroups?: CustomisationGroup[]; promotions?: Promotion[]; settings?: Partial<RestaurantSettings> }) => {
+        if (!active) return;
+        setCategories(Array.isArray(data.categories) ? data.categories : []);
+        setProducts(Array.isArray(data.products) ? data.products : []);
+        setCustomisationGroups(Array.isArray(data.customisationGroups) ? data.customisationGroups : []);
+        setPromotions(Array.isArray(data.promotions) ? data.promotions : []);
+        if (data.settings) setSettings((current) => ({ ...current, ...data.settings }));
+      })
+      .catch((error) => {
+        // Keep the existing static catalogue as a resilience fallback while the API is unavailable.
+        console.error('ZESTRO live catalog unavailable; using local catalogue fallback.', error);
+      })
+      .finally(() => {
+        if (active) setCatalogLoading(false);
+      });
+    return () => { active = false; };
   }, []);
 
   const applyResolvedTable = useCallback(
@@ -276,31 +297,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return { ok: false, error: dict.qrScanner.invalidQr };
       }
 
-      const remoteTable = null; // Cloudflare database integration will be added later.
-
-      const fallbackTable = INITIAL_TABLES.find(
-        (t) => t.id === parsed.tableId || t.number === parsed.tableNumber
-      );
-
-      const resolved = remoteTable || fallbackTable;
-      if (!resolved) {
+      try {
+        const resolved = await postJson<{ tableId: string; tableNumber: string; tableName: string }>('/api/tables/verify', {
+          tableId: parsed.tableId,
+          tableNumber: parsed.tableNumber,
+        });
+        applyResolvedTable(resolved.tableId, resolved.tableNumber, resolved.tableName);
+        showToast(
+          dict.qrScanner.verifiedBody.replace('{table}', resolved.tableName),
+          'success'
+        );
+        return { ok: true, tableId: resolved.tableId, tableNumber: resolved.tableNumber, tableName: resolved.tableName };
+      } catch (error) {
         return {
           ok: false,
-          error: dict.qrScanner.tableNotFound.replace('{id}', parsed.tableId),
+          error: error instanceof Error ? error.message : dict.qrScanner.tableNotFound.replace('{id}', parsed.tableId),
         };
       }
-
-      applyResolvedTable(resolved.id, resolved.number, resolved.name);
-      showToast(
-        dict.qrScanner.verifiedBody.replace('{table}', resolved.name || `Table ${resolved.number}`),
-        'success'
-      );
-      return {
-        ok: true,
-        tableId: resolved.id,
-        tableNumber: resolved.number,
-        tableName: resolved.name,
-      };
     },
     [applyResolvedTable, showToast]
   );
@@ -389,20 +402,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     setWaiterCalling(true);
     try {
-      const checkRes = await fetch('/api/waiter-calls/check', {
+      const response = await fetch(`${API_BASE}/api/waiter-calls`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tableId: detectedTableId }),
+        body: JSON.stringify({ tableId: detectedTableId, requestType: 'Table Assistance' }),
       });
-      const checkJson = (await checkRes.json()) as { allowed?: boolean; remainingSeconds?: number };
-      if (checkJson.allowed === false) {
-        showToast(dict.hero.waiterCooldown, 'info');
-        setWaiterCooldownSec(checkJson.remainingSeconds || 45);
+      const result = await response.json() as { ok?: boolean; error?: string };
+      if (!response.ok || !result.ok) {
+        showToast(result.error || dict.hero.waiterCooldown, 'info');
+        if (response.status === 429) setWaiterCooldownSec(60);
         return;
       }
-
-      // Waiter-call delivery will be connected to the Cloudflare backend later.
-      localStorage.setItem('zestro_pending_waiter_call', JSON.stringify({ tableId: detectedTableId, tableNumber: detectedTableNumber, createdAt: new Date().toISOString() }));
       localStorage.setItem(`${WAITER_COOLDOWN_KEY}_${detectedTableId}`, String(Date.now()));
       setWaiterCooldownSec(60);
       showToast(`${dict.hero.waiterCalled} ${detectedTableNumber}`, 'success');
