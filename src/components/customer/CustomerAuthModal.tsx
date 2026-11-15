@@ -335,244 +335,49 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
               {mode === 'forgot' ? (
                 <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
                   Password reset is not available yet. Please contact the restaurant for assistance.
-                </div>
-              ) : (                    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-                      <div className="space-y-1.5">
-                        <label
-                          htmlFor="cust-reset-email"
-                          className="block text-xs font-semibold text-[#101210]"
-                        >
-                          {t.account.email} *
-                        </label>
-                        <div className="relative">
-                          <Mail className="w-4 h-4 text-[#5B564E] absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                          <input
-                            id="cust-reset-email"
-                            type="email"
-                            required
-                            autoComplete="email"
-                            maxLength={200}
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder={t.account.emailPlaceholder}
-                            className="w-full ps-10 pe-3.5 py-2.5 rounded-xl border border-[#101B17]/18 bg-white text-sm text-[#101210] focus:outline-none focus:ring-2 focus:ring-[#101B17] min-h-[46px]"
-                          />
-                        </div>
-                      </div>
-
-                      <motion.button
-                        type="submit"
-                        whileTap={{ scale: 0.985 }}
-                        disabled={submitting}
-                        className="w-full py-3.5 px-5 rounded-xl bg-[#101B17] text-[#F3EBDD] font-semibold text-sm hover:bg-[#1D2922] disabled:opacity-60 transition-colors flex items-center justify-center gap-2 min-h-[48px] shadow-sm cursor-pointer"
-                      >
-                        {submitting ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin text-[#D7A65A]" />
-                            <span>{t.account.sendingReset}</span>
-                          </>
-                        ) : (
-                          <>
-                            <KeyRound className="w-4 h-4 text-[#D7A65A]" />
-                            <span>{t.account.sendResetBtn}</span>
-                          </>
-                        )}
-                      </motion.button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMode('signin');
-                          setErrorMsg(null);
-                        }}
-                        className="w-full py-2.5 px-4 rounded-xl border border-[#101B17]/18 bg-white/70 text-xs font-semibold text-[#101210] hover:bg-white transition-colors inline-flex items-center justify-center gap-1.5 min-h-[42px] cursor-pointer"
-                      >
-                        <ArrowLeft className={`w-3.5 h-3.5 ${isRtl ? 'rotate-180' : ''}`} />
-                        <span>{t.account.backToSignIn}</span>
-                      </button>
-                    </form>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => { setMode('signin'); setErrorMsg(null); }}
+                    className="mt-3 block font-semibold underline"
+                  >
+                    {t.account.backToSignIn}
+                  </button>
                 </div>
               ) : (
-                <>
-                  {/* Email & Password Form */}
-                  <form onSubmit={handleSubmit} className="space-y-3.5" noValidate>
-                    {mode === 'signup' && (
-                      <>
-                        <div className="space-y-1">
-                          <label
-                            htmlFor="cust-auth-name"
-                            className="block text-xs font-semibold text-[#101210]"
-                          >
-                            {t.account.fullName} *
-                          </label>
-                          <div className="relative">
-                            <UserIcon className="w-4 h-4 text-[#5B564E] absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                            <input
-                              id="cust-auth-name"
-                              type="text"
-                              required
-                              autoComplete="name"
-                              maxLength={120}
-                              value={name}
-                              onChange={(e) => setName(e.target.value)}
-                              placeholder={t.account.fullNamePlaceholder}
-                              className="w-full ps-10 pe-3.5 py-2.5 rounded-xl border border-[#101B17]/18 bg-white text-sm text-[#101210] focus:outline-none focus:ring-2 focus:ring-[#101B17] min-h-[44px]"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-1">
-                          <label
-                            htmlFor="cust-auth-phone"
-                            className="block text-xs font-semibold text-[#101210]"
-                          >
-                            {t.account.phone}
-                          </label>
-                          <div className="relative">
-                            <Phone className="w-4 h-4 text-[#5B564E] absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                            <input
-                              id="cust-auth-phone"
-                              type="tel"
-                              autoComplete="tel"
-                              maxLength={24}
-                              value={phone}
-                              onChange={(e) => setPhone(e.target.value)}
-                              placeholder={t.account.phonePlaceholder}
-                              className="w-full ps-10 pe-3.5 py-2.5 rounded-xl border border-[#101B17]/18 bg-white text-sm text-[#101210] font-mono-tabular focus:outline-none focus:ring-2 focus:ring-[#101B17] min-h-[44px]"
-                            />
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    <div className="space-y-1">
-                      <label
-                        htmlFor="cust-auth-email"
-                        className="block text-xs font-semibold text-[#101210]"
-                      >
-                        {t.account.email} *
-                      </label>
-                      <div className="relative">
-                        <Mail className="w-4 h-4 text-[#5B564E] absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        <input
-                          id="cust-auth-email"
-                          type="email"
-                          required
-                          autoComplete="email"
-                          maxLength={200}
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder={t.account.emailPlaceholder}
-                          className="w-full ps-10 pe-3.5 py-2.5 rounded-xl border border-[#101B17]/18 bg-white text-sm text-[#101210] focus:outline-none focus:ring-2 focus:ring-[#101B17] min-h-[44px]"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <label
-                          htmlFor="cust-auth-password"
-                          className="block text-xs font-semibold text-[#101210]"
-                        >
-                          {t.account.password} *
-                        </label>
-                        {mode === 'signin' && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setMode('forgot');
-                              setErrorMsg(null);
-                              setSuggestSignIn(false);
-                              setResetSentEmail(null);
-                              setPassword('');
-                            }}
-                            className="text-xs font-semibold text-[#101B17] hover:text-[#D7A65A] transition-colors cursor-pointer"
-                          >
-                            {t.account.forgotPassword}
-                          </button>
-                        )}
-                      </div>
-                      <div className="relative">
-                        <Lock className="w-4 h-4 text-[#5B564E] absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        <input
-                          id="cust-auth-password"
-                          type={showPassword ? 'text' : 'password'}
-                          required
-                          autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                          minLength={12}
-                          maxLength={128}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder={t.account.passwordPlaceholder}
-                          className="w-full ps-10 pe-10 py-2.5 rounded-xl border border-[#101B17]/18 bg-white text-sm text-[#101210] focus:outline-none focus:ring-2 focus:ring-[#101B17] min-h-[44px]"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword((prev) => !prev)}
-                          aria-label={showPassword ? 'Hide password' : 'Show password'}
-                          className="absolute end-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-[#5B564E] hover:text-[#101210] cursor-pointer"
-                        >
-                          {showPassword ? (
-                            <EyeOff className="w-4 h-4" />
-                          ) : (
-                            <Eye className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {mode === 'signup' && (
+                <form onSubmit={handleSubmit} className="space-y-3.5" noValidate>
+                  {mode === 'signup' && (
+                    <>
                       <div className="space-y-1">
-                        <label
-                          htmlFor="cust-auth-address"
-                          className="block text-xs font-semibold text-[#101210]"
-                        >
-                          {t.account.defaultAddress}
-                        </label>
-                        <div className="relative">
-                          <MapPin className="w-4 h-4 text-[#5B564E] absolute start-3.5 top-3 pointer-events-none" />
-                          <textarea
-                            id="cust-auth-address"
-                            rows={2}
-                            maxLength={400}
-                            value={defaultAddress}
-                            onChange={(e) => setDefaultAddress(e.target.value)}
-                            placeholder={t.account.defaultAddressPlaceholder}
-                            className="w-full ps-10 pe-3.5 py-2.5 rounded-xl border border-[#101B17]/18 bg-white text-sm text-[#101210] focus:outline-none focus:ring-2 focus:ring-[#101B17]"
-                          />
-                        </div>
+                        <label htmlFor="cust-auth-name" className="block text-xs font-semibold text-[#101210]">{t.account.fullName} *</label>
+                        <input id="cust-auth-name" type="text" required autoComplete="name" maxLength={120} value={name} onChange={(e) => setName(e.target.value)} placeholder={t.account.fullNamePlaceholder} className="w-full px-3.5 py-2.5 rounded-xl border border-[#101B17]/18 bg-white text-sm text-[#101210] min-h-[44px]" />
                       </div>
-                    )}
-
-                    <motion.button
-                      type="submit"
-                      whileTap={{ scale: 0.985 }}
-                      disabled={submitting}
-                      className="w-full mt-2 py-3.5 px-5 rounded-xl bg-[#101B17] text-[#F3EBDD] font-semibold text-sm hover:bg-[#1D2922] disabled:opacity-60 transition-colors flex items-center justify-center gap-2 min-h-[48px] shadow-sm cursor-pointer"
-                    >
-                      {submitting ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin text-[#D7A65A]" />
-                          <span>
-                            {mode === 'signup'
-                              ? t.account.creatingAccount
-                              : t.account.signingIn}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="w-4 h-4 text-[#D7A65A]" />
-                          <span>
-                            {mode === 'signup'
-                              ? t.account.createAccountBtn
-                              : t.account.signInSubmitBtn}
-                          </span>
-                        </>
-                      )}
-                    </motion.button>
-                  </form>
-                </>
+                      <div className="space-y-1">
+                        <label htmlFor="cust-auth-phone" className="block text-xs font-semibold text-[#101210]">{t.account.phone}</label>
+                        <input id="cust-auth-phone" type="tel" autoComplete="tel" maxLength={24} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t.account.phonePlaceholder} className="w-full px-3.5 py-2.5 rounded-xl border border-[#101B17]/18 bg-white text-sm text-[#101210] min-h-[44px]" />
+                      </div>
+                    </>
+                  )}
+                  <div className="space-y-1">
+                    <label htmlFor="cust-auth-email" className="block text-xs font-semibold text-[#101210]">{t.account.email} *</label>
+                    <input id="cust-auth-email" type="email" required autoComplete="email" maxLength={200} value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t.account.emailPlaceholder} className="w-full px-3.5 py-2.5 rounded-xl border border-[#101B17]/18 bg-white text-sm text-[#101210] min-h-[44px]" />
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="cust-auth-password" className="block text-xs font-semibold text-[#101210]">{t.account.password} *</label>
+                    <div className="relative">
+                      <input id="cust-auth-password" type={showPassword ? 'text' : 'password'} required autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} minLength={12} maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t.account.passwordPlaceholder} className="w-full px-3.5 py-2.5 pe-12 rounded-xl border border-[#101B17]/18 bg-white text-sm text-[#101210] min-h-[44px]" />
+                      <button type="button" onClick={() => setShowPassword((prev) => !prev)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute end-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-[#5B564E]">{showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
+                    </div>
+                  </div>
+                  {mode === 'signup' && (
+                    <div className="space-y-1">
+                      <label htmlFor="cust-auth-address" className="block text-xs font-semibold text-[#101210]">{t.account.defaultAddress}</label>
+                      <textarea id="cust-auth-address" rows={2} maxLength={400} value={defaultAddress} onChange={(e) => setDefaultAddress(e.target.value)} placeholder={t.account.defaultAddressPlaceholder} className="w-full px-3.5 py-2.5 rounded-xl border border-[#101B17]/18 bg-white text-sm text-[#101210]" />
+                    </div>
+                  )}
+                  <motion.button type="submit" whileTap={{ scale: 0.985 }} disabled={submitting} className="w-full mt-2 py-3.5 px-5 rounded-xl bg-[#101B17] text-[#F3EBDD] font-semibold text-sm hover:bg-[#1D2922] disabled:opacity-60 transition-colors flex items-center justify-center gap-2 min-h-[48px] shadow-sm cursor-pointer">
+                    {submitting ? <><Loader2 className="w-4 h-4 animate-spin text-[#D7A65A]" /><span>{mode === 'signup' ? t.account.creatingAccount : t.account.signingIn}</span></> : <><UserPlus className="w-4 h-4 text-[#D7A65A]" /><span>{mode === 'signup' ? t.account.createAccountBtn : t.account.signInSubmitBtn}</span></>}
+                  </motion.button>
+                </form>
               )}
             </div>
           </motion.div>
