@@ -3,7 +3,7 @@ type User = { uid: string; displayName: string | null; email: string | null; pho
 import { INITIAL_SETTINGS } from '../data/initialMenu';
 import { Dictionary, TRANSLATIONS } from '../i18n/translations';
 import { parseTableQrPayload } from '../utils/tableQrParser';
-import { API_BASE, postJson } from '../services/liveApi';
+import { API_BASE, apiRequest, getCustomerToken, postJson, setCustomerToken } from '../services/liveApi';
 
 import type {
   CartItem,
@@ -902,35 +902,106 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [customisationGroups, language, products, showToast]
   );
 
-  const accountUnavailable = async (): Promise<void> => {
-    throw new Error('Customer accounts are temporarily unavailable; guest ordering and order tracking work immediately.');
-  };
+  const refreshCustomerSession = useCallback(async () => {
+    const token = getCustomerToken();
+    if (!token) {
+      setCustomerAuthLoading(false);
+      return;
+    }
+    try {
+      const res = await apiRequest<{
+        user: User;
+        profile: CustomerProfile;
+        orders?: Order[];
+      }>('/api/customer/me');
+      setCustomerUser(res.user);
+      setCustomerProfile(res.profile);
+      setCustomerOrders(Array.isArray(res.orders) ? res.orders : []);
+    } catch {
+      setCustomerToken(null);
+      setCustomerUser(null);
+      setCustomerProfile(null);
+      setCustomerOrders([]);
+    } finally {
+      setCustomerAuthLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshCustomerSession();
+  }, [refreshCustomerSession]);
+
   const signUpWithEmail = useCallback(
-    async (_input: {
+    async (input: {
       name: string;
       phone?: string;
       email: string;
       password: string;
       defaultAddress?: string;
-    }) => accountUnavailable(),
+    }) => {
+      const res = await postJson<{
+        token: string;
+        user: User;
+        profile: CustomerProfile;
+        orders?: Order[];
+      }>('/api/customer/auth/signup', input);
+      setCustomerToken(res.token);
+      setCustomerUser(res.user);
+      setCustomerProfile(res.profile);
+      setCustomerOrders(Array.isArray(res.orders) ? res.orders : []);
+    },
     []
   );
-  const signInWithEmail = useCallback(
-    async (_input: { email: string; password: string }) => accountUnavailable(),
-    []
-  );
-  const signInWithGoogleCustomer = useCallback(async () => accountUnavailable(), []);
+
+  const signInWithEmail = useCallback(async (input: { email: string; password: string }) => {
+    const res = await postJson<{
+      token: string;
+      user: User;
+      profile: CustomerProfile;
+    }>('/api/customer/auth/login', input);
+    setCustomerToken(res.token);
+    setCustomerUser(res.user);
+    setCustomerProfile(res.profile);
+    try {
+      const me = await apiRequest<{ orders?: Order[] }>('/api/customer/me');
+      setCustomerOrders(Array.isArray(me.orders) ? me.orders : []);
+    } catch {
+      setCustomerOrders([]);
+    }
+  }, []);
+
+  const signInWithGoogleCustomer = useCallback(async () => {
+    throw new Error('Google Sign-In is not configured. Please sign in with Email & Password.');
+  }, []);
+
   const saveCustomerProfile = useCallback(
-    async (_input: {
+    async (input: {
       displayName: string;
       phone: string;
       defaultAddress?: string;
       preferredOrderType?: OrderType;
-    }) => accountUnavailable(),
+    }) => {
+      const res = await apiRequest<{
+        user: User;
+        profile: CustomerProfile;
+      }>('/api/customer/profile', { method: 'PATCH', body: input });
+      setCustomerUser(res.user);
+      setCustomerProfile(res.profile);
+    },
     []
   );
-  const resetCustomerPassword = useCallback(async (_email: string) => accountUnavailable(), []);
+
+  const resetCustomerPassword = useCallback(async (_email: string) => {
+    throw new Error('Password reset emails are not configured. Please contact the restaurant.');
+  }, []);
+
   const signOutCustomer = useCallback(async () => {
+    try {
+      await postJson('/api/customer/auth/logout', {});
+    } catch {
+      // Clear local session regardless of network outcome.
+    }
+    setCustomerToken(null);
     setCustomerUser(null);
     setCustomerProfile(null);
     setCustomerOrders([]);
