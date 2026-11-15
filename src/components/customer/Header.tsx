@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowRight, Globe, Menu, QrCode, Receipt, ShoppingBag, User, UserPlus, X } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Copy, Check, Globe, Menu, QrCode, Receipt, ShoppingBag, Sparkles, User, UserPlus, X } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import type { Language } from '../../types';
 import { BrandLogo } from '../BrandLogo';
@@ -42,9 +42,40 @@ export const Header: React.FC<HeaderProps> = ({
     customerProfile,
     customerOrders,
     detectedTableNumber,
+    offers,
   } = useStore();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [offerIdx, setOfferIdx] = useState(0);
+  const [offersPaused, setOffersPaused] = useState(false);
+  const [offersDismissed, setOffersDismissed] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  const validOffers = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return (offers || []).filter((o) => {
+      if (!o.title?.trim()) return false;
+      const from = (o.validFrom || '').slice(0, 10);
+      const until = (o.validUntil || '').slice(0, 10);
+      if (from && from > today) return false;
+      if (until && until < today) return false;
+      return true;
+    });
+  }, [offers]);
+
+  useEffect(() => {
+    if (offerIdx >= validOffers.length) setOfferIdx(0);
+  }, [validOffers.length, offerIdx]);
+
+  useEffect(() => {
+    if (validOffers.length <= 1 || offersPaused || offersDismissed) return;
+    const timer = window.setInterval(() => {
+      setOfferIdx((i) => (i + 1) % validOffers.length);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [validOffers.length, offersPaused, offersDismissed]);
+
+  const activeOffer = validOffers[offerIdx] || null;
 
   const customerName =
     customerProfile?.displayName || customerUser?.displayName || t.account.myAccountBtn;
@@ -113,6 +144,87 @@ export const Header: React.FC<HeaderProps> = ({
           : 'bg-gradient-to-b from-[#101210]/85 via-[#101210]/45 to-transparent border-b border-white/5'
       }`}
     >
+      {activeOffer && !offersDismissed && (
+        <div
+          onMouseEnter={() => setOffersPaused(true)}
+          onMouseLeave={() => setOffersPaused(false)}
+          className="bg-[#101B17]/95 border-b border-[#D7A65A]/25 text-[#F3EBDD]"
+        >
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-1.5 flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1 justify-center">
+              {validOffers.length > 1 && (
+                <button
+                  type="button"
+                  aria-label="Previous offer"
+                  onClick={() => setOfferIdx((i) => (i - 1 + validOffers.length) % validOffers.length)}
+                  className="p-0.5 rounded text-[#F3EBDD]/60 hover:text-[#D7A65A] shrink-0"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <Sparkles className="w-3.5 h-3.5 text-[#D7A65A] shrink-0 hidden sm:block" />
+              {activeOffer.discountText && (
+                <span className="shrink-0 rounded-full bg-[#D7A65A] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#101210]">
+                  {activeOffer.discountText}
+                </span>
+              )}
+              <span className="font-semibold text-[#F3EBDD] truncate">
+                {activeOffer.title}
+              </span>
+              {activeOffer.description && (
+                <span className="hidden md:inline text-[#F3EBDD]/75 truncate max-w-[360px]">
+                  — {activeOffer.description}
+                </span>
+              )}
+              {activeOffer.code && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (activeOffer.code && navigator.clipboard) {
+                      void navigator.clipboard.writeText(activeOffer.code);
+                      setCopiedCode(activeOffer.code);
+                      window.setTimeout(() => setCopiedCode(null), 1800);
+                    }
+                  }}
+                  title="Copy promo code"
+                  className="shrink-0 inline-flex items-center gap-1 rounded border border-[#D7A65A]/45 bg-[#D7A65A]/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#D7A65A] hover:bg-[#D7A65A]/25"
+                >
+                  <span>{activeOffer.code}</span>
+                  {copiedCode === activeOffer.code ? (
+                    <Check className="w-2.5 h-2.5 text-emerald-300" />
+                  ) : (
+                    <Copy className="w-2.5 h-2.5 opacity-80" />
+                  )}
+                </button>
+              )}
+              {validOffers.length > 1 && (
+                <>
+                  <span className="text-[10px] text-[#F3EBDD]/50 shrink-0 hidden sm:inline">
+                    {offerIdx + 1}/{validOffers.length}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Next offer"
+                    onClick={() => setOfferIdx((i) => (i + 1) % validOffers.length)}
+                    className="p-0.5 rounded text-[#F3EBDD]/60 hover:text-[#D7A65A] shrink-0"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
+            <button
+              type="button"
+              aria-label="Dismiss offers banner"
+              onClick={() => setOffersDismissed(true)}
+              className="p-1 rounded text-[#F3EBDD]/55 hover:text-[#F3EBDD] shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-[74px] flex items-center justify-between gap-2 sm:gap-4 lg:gap-8">
         {/* Zone 1: Brand Identity */}
         <motion.a

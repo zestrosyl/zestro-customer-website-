@@ -21,6 +21,7 @@ import type {
   OrderType,
   Product,
   Promotion,
+  HomepageOffer,
   RestaurantSettings,
   SelectedCustomisation,
 } from '../types';
@@ -48,6 +49,7 @@ interface StoreContextValue {
   products: Product[];
   customisationGroups: CustomisationGroup[];
   promotions: Promotion[];
+  offers: HomepageOffer[];
   settings: RestaurantSettings;
   homepage: LiveHomepageConfig | null;
   gallery: LiveGalleryItem[];
@@ -136,6 +138,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [products, setProducts] = useState<Product[]>([]);
   const [customisationGroups, setCustomisationGroups] = useState<CustomisationGroup[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [offers, setOffers] = useState<HomepageOffer[]>([]);
   const [settings, setSettings] = useState<RestaurantSettings>(INITIAL_SETTINGS);
   const [homepage, setHomepage] = useState<LiveHomepageConfig | null>(null);
   const [gallery, setGallery] = useState<LiveGalleryItem[]>([]);
@@ -262,6 +265,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           products?: Product[];
           customisationGroups?: CustomisationGroup[];
           promotions?: Promotion[];
+          offers?: HomepageOffer[];
           settings?: Partial<RestaurantSettings>;
           homepage?: LiveHomepageConfig | null;
           gallery?: LiveGalleryItem[];
@@ -280,11 +284,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const liveProducts = Array.isArray(data.products) ? data.products : [];
         const liveGroups = Array.isArray(data.customisationGroups) ? data.customisationGroups : [];
         const livePromotions = Array.isArray(data.promotions) ? data.promotions : [];
+        const liveOffers = Array.isArray(data.offers) ? data.offers : [];
 
         setCategories(liveCategories);
         setProducts(liveProducts);
         setCustomisationGroups(liveGroups);
         setPromotions(livePromotions);
+        setOffers(liveOffers);
         setHomepage(data.homepage || null);
         setGallery(Array.isArray(data.gallery) ? data.gallery : []);
         if (data.settings) {
@@ -1029,6 +1035,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         products,
         customisationGroups,
         promotions,
+      offers,
         settings,
         homepage,
         gallery,
