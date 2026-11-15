@@ -71,4 +71,45 @@ describe('ZESTRO Customer Website — QR Parser, Build Assets & Live-Only Safegu
     assert.equal(storeSrc.includes('INITIAL_PROMOTIONS'), false);
     assert.equal(storeSrc.includes('INITIAL_TABLES'), false);
   });
+
+  it('4. No component calls a React hook after an early return (prevents minified React error #300 blank page)', () => {
+    const files = [];
+    const walk = (dir) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (/\.tsx$/.test(entry.name)) files.push(full);
+      }
+    };
+    walk(path.join(REPO_ROOT, 'src'));
+    assert.ok(files.length > 0, 'expected .tsx files under src/');
+
+    const violations = [];
+    for (const file of files) {
+      const lines = fs.readFileSync(file, 'utf8').split('\n');
+      let earlyReturnLine = -1;
+      lines.forEach((line, idx) => {
+        // A new top-level declaration starts a new component scope.
+        if (/^(export\s+)?(default\s+)?(const|function|class)\s/.test(line)) {
+          earlyReturnLine = -1;
+          return;
+        }
+        // Early return inside a top-level `if` of a component body (4-space indent).
+        if (/^ {4}return\b/.test(line) && /^ {2}if\s*\(/.test(lines.slice(0, idx).reverse().find((l) => /^ {2}\S/.test(l)) || '')) {
+          earlyReturnLine = idx + 1;
+          return;
+        }
+        // One-line early return: `  if (cond) return null;`
+        if (/^ {2}if\s*\(.*\)\s*return\b/.test(line)) {
+          earlyReturnLine = idx + 1;
+          return;
+        }
+        if (earlyReturnLine > 0 && /^ {2}(const|let)?.*\buse[A-Z]\w*\s*(<[^>]*>)?\(/.test(line)) {
+          violations.push(`${path.relative(REPO_ROOT, file)}:${idx + 1} hook after early return at line ${earlyReturnLine}`);
+        }
+      });
+    }
+    assert.deepEqual(violations, [], `Hooks must run before any early return:\n${violations.join('\n')}`);
+  });
 });
+
