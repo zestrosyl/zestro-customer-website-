@@ -129,7 +129,7 @@ const SCANNED_TABLE_STORAGE_KEY = 'zestro_scanned_table_v1';
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem(LANG_STORAGE_KEY);
-    if (saved === 'en' || saved === 'bn' || saved === 'ar') return saved;
+    if (saved === 'en' || saved === 'bn') return saved;
     return 'en';
   });
 
