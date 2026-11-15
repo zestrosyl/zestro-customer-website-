@@ -68,14 +68,16 @@ export const BeverageSection: React.FC<BeverageSectionProps> = ({
     return picked;
   }, [products, beverageCategories]);
 
-  if (!catalogLoading && beverageCategories.length === 0 && featuredBeverages.length === 0) {
-    return null;
-  }
-
   const categoryMap = useMemo(
     () => new Map(categories.map((c) => [c.id, c])),
     [categories]
   );
+
+  // Early return must stay below every hook call: returning before a hook changes the
+  // hook count between renders (loading -> loaded) and crashes React (minified error #300).
+  if (!catalogLoading && beverageCategories.length === 0 && featuredBeverages.length === 0) {
+    return null;
+  }
 
   const formatPrice = (product: Product) => {
     if (product.variants && product.variants.length > 1) {
