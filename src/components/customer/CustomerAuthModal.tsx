@@ -150,22 +150,6 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
       return;
     }
 
-    if (mode === 'forgot') {
-      setErrorMsg('Password reset is not available yet. Please contact the restaurant.');
-      return;
-    }
-    if (false) {
-      setSubmitting(true);
-      try {
-        await resetCustomerPassword(trimmedEmail);
-        setResetSentEmail(trimmedEmail);
-      } catch (err) {
-        setErrorMsg(mapAuthError(err));
-      } finally {
-        setSubmitting(false);
-      }
-      return;
-    }
 
     if (password.length < 12) {
       setErrorMsg(t.account.errors.passwordMin);
