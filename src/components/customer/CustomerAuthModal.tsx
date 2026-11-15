@@ -333,38 +333,10 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
               )}
 
               {mode === 'forgot' ? (
-                <div className="space-y-4">
-                  {resetSentEmail ? (
-                    <div className="bg-white rounded-2xl border border-[#101B17]/15 p-5 space-y-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#101B17] text-[#D7A65A] flex items-center justify-center shrink-0">
-                          <CheckCircle2 className="w-5 h-5" />
-                        </div>
-                        <div className="space-y-1">
-                          <h3 className="font-display text-base font-bold text-[#101210]">
-                            {t.account.resetSentTitle}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-[#5B564E] leading-relaxed">
-                            {t.account.resetSentBody.replace('{email}', resetSentEmail)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMode('signin');
-                          setResetSentEmail(null);
-                          setErrorMsg(null);
-                        }}
-                        className="w-full py-3 px-4 rounded-xl bg-[#101B17] text-[#F3EBDD] font-semibold text-sm hover:bg-[#1D2922] transition-colors flex items-center justify-center gap-2 min-h-[46px] cursor-pointer"
-                      >
-                        <ArrowLeft className={`w-4 h-4 text-[#D7A65A] ${isRtl ? 'rotate-180' : ''}`} />
-                        <span>{t.account.backToSignIn}</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+                  Password reset is not available yet. Please contact the restaurant for assistance.
+                </div>
+              ) : (                    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                       <div className="space-y-1.5">
                         <label
                           htmlFor="cust-reset-email"
