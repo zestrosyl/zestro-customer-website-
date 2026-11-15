@@ -3,7 +3,7 @@ type User = { uid: string; displayName: string | null; email: string | null; pho
 import { INITIAL_SETTINGS } from '../data/initialMenu';
 import { Dictionary, TRANSLATIONS } from '../i18n/translations';
 import { parseTableQrPayload } from '../utils/tableQrParser';
-import { API_BASE, postJson } from '../services/liveApi';
+import { API_BASE, postJson, customerApi } from '../services/liveApi';
 
 import type {
   CartItem,
@@ -902,40 +902,36 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [customisationGroups, language, products, showToast]
   );
 
-  const accountUnavailable = async (): Promise<void> => {
-    throw new Error('Customer accounts are temporarily unavailable; guest ordering and order tracking work immediately.');
-  };
-  const signUpWithEmail = useCallback(
-    async (_input: {
-      name: string;
-      phone?: string;
-      email: string;
-      password: string;
-      defaultAddress?: string;
-    }) => accountUnavailable(),
-    []
-  );
-  const signInWithEmail = useCallback(
-    async (_input: { email: string; password: string }) => accountUnavailable(),
-    []
-  );
-  const signInWithGoogleCustomer = useCallback(async () => accountUnavailable(), []);
-  const saveCustomerProfile = useCallback(
-    async (_input: {
-      displayName: string;
-      phone: string;
-      defaultAddress?: string;
-      preferredOrderType?: OrderType;
-    }) => accountUnavailable(),
-    []
-  );
-  const resetCustomerPassword = useCallback(async (_email: string) => accountUnavailable(), []);
-  const signOutCustomer = useCallback(async () => {
-    setCustomerUser(null);
-    setCustomerProfile(null);
-    setCustomerOrders([]);
+  const applyCustomer = useCallback((customer: { uid: string; displayName: string | null; email: string | null; phone?: string; defaultAddress?: string }) => {
+    setCustomerUser({ uid: customer.uid, displayName: customer.displayName, email: customer.email, photoURL: null });
+    setCustomerProfile({ uid: customer.uid, email: customer.email || '', displayName: customer.displayName || '', phone: customer.phone || '', defaultAddress: customer.defaultAddress || '' });
   }, []);
-
+  useEffect(() => {
+    let active = true;
+    customerApi<{ customer: { uid: string; displayName: string | null; email: string | null; phone?: string; defaultAddress?: string }; orders?: Order[] }>('/api/customer/me', 'GET')
+      .then((result) => { if (active) { applyCustomer(result.customer); setCustomerOrders(Array.isArray(result.orders) ? result.orders : []); } })
+      .catch(() => { if (active) { setCustomerUser(null); setCustomerProfile(null); setCustomerOrders([]); } })
+      .finally(() => { if (active) setCustomerAuthLoading(false); });
+    return () => { active = false; };
+  }, [applyCustomer]);
+  const signUpWithEmail = useCallback(async (input: { name: string; phone?: string; email: string; password: string; defaultAddress?: string }) => {
+    const result = await customerApi<{ customer: { uid: string; displayName: string | null; email: string | null; phone?: string; defaultAddress?: string } }>('/api/customer/auth/signup', 'POST', input);
+    applyCustomer(result.customer);
+  }, [applyCustomer]);
+  const signInWithEmail = useCallback(async (input: { email: string; password: string }) => {
+    const result = await customerApi<{ customer: { uid: string; displayName: string | null; email: string | null; phone?: string; defaultAddress?: string } }>('/api/customer/auth/login', 'POST', input);
+    applyCustomer(result.customer);
+  }, [applyCustomer]);
+  const signInWithGoogleCustomer = useCallback(async () => { throw new Error('Google Sign-In is not configured. Use email and password.'); }, []);
+  const saveCustomerProfile = useCallback(async (input: { displayName: string; phone: string; defaultAddress?: string; preferredOrderType?: OrderType }) => {
+    const result = await customerApi<{ customer: { uid: string; displayName: string | null; email: string | null; phone?: string; defaultAddress?: string } }>('/api/customer/profile', 'PATCH', input);
+    applyCustomer(result.customer);
+  }, [applyCustomer]);
+  const resetCustomerPassword = useCallback(async (_email: string) => { throw new Error('Password reset is not available yet. Please contact the restaurant.'); }, []);
+  const signOutCustomer = useCallback(async () => {
+    try { await customerApi('/api/customer/auth/logout', 'POST', {}); }
+    finally { setCustomerUser(null); setCustomerProfile(null); setCustomerOrders([]); }
+  }, []);
   const getOrderLoyaltyPoints = useCallback(
     (orderTotal: number, status?: OrderStatus): number => {
       if (status === 'cancelled') return 0;
