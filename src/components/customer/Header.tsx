@@ -18,7 +18,6 @@ interface HeaderProps {
 const LANG_OPTIONS: { code: Language; label: string }[] = [
   { code: 'en', label: 'EN' },
   { code: 'bn', label: 'বাং' },
-  { code: 'ar', label: 'عر' },
 ];
 
 export const Header: React.FC<HeaderProps> = ({

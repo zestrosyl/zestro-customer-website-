@@ -95,12 +95,19 @@ function toTimestampMs(val: unknown): number {
 
 function formatDateMs(ms: number): string {
   if (!ms) return '';
-  return new Date(ms).toLocaleString([], {
-    month: 'short',
-    day: 'numeric',
+  const dateObj = new Date(ms);
+  if (Number.isNaN(dateObj.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Dhaka',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  });
+    hour12: true,
+  }).formatToParts(dateObj);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  return `${get('day')}-${get('month')}-${get('year')}, ${get('hour')}:${get('minute')} ${get('dayPeriod').toUpperCase()}`;
 }
 
 function getStatusMeta(
