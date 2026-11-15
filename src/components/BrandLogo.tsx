@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { OFFICIAL_LOGO_PATH } from '../data/initialMenu';
 
 interface BrandLogoProps {
@@ -14,6 +14,10 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 }) => {
   const [imgFailed, setImgFailed] = useState(false);
   const src = logoUrl || OFFICIAL_LOGO_PATH;
+
+  useEffect(() => {
+    setImgFailed(false);
+  }, [src]);
 
   const boxSizes = {
     sm: 'h-8 w-8 sm:h-9 sm:w-9 rounded-lg',
@@ -42,7 +46,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
             alt="Zestro official logo"
             referrerPolicy="no-referrer"
             onError={() => setImgFailed(true)}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain p-0.5"
           />
         ) : (
           <span

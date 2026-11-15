@@ -259,6 +259,16 @@ export interface LiveHomepageSection {
   order: number;
 }
 
+export interface HomepageOffer {
+  id: string;
+  title: string;
+  description?: string;
+  discountText?: string;
+  code?: string;
+  validFrom?: string;
+  validUntil?: string;
+}
+
 export interface LiveHomepageConfig {
   heroImageUrl?: string;
   heroHeadline?: string;
