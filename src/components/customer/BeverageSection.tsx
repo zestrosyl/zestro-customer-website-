@@ -25,7 +25,7 @@ export const BeverageSection: React.FC<BeverageSectionProps> = ({
   onSelectCategoryAndScroll,
   onOpenProduct,
 }) => {
-  const { language, t, isRtl, categories, products, addToCart, settings } = useStore();
+  const { language, t, isRtl, categories, products, catalogLoading, addToCart, settings } = useStore();
   const [recentlyAddedId, setRecentlyAddedId] = useState<string | null>(null);
 
   const beverageCategories = useMemo(
@@ -39,15 +39,24 @@ export const BeverageSection: React.FC<BeverageSectionProps> = ({
   const featuredBeverages = useMemo(() => {
     const picked: Product[] = [];
     const seen = new Set<string>();
+    const catSet = new Set(beverageCategories.map((c) => c.id));
+
+    for (const p of products) {
+      if (picked.length >= 6) break;
+      if (catSet.has(p.categoryId) && p.available && !p.soldOut && (p.featured || p.popular) && !seen.has(p.id)) {
+        seen.add(p.id);
+        picked.push(p);
+      }
+    }
     for (const id of FEATURED_BEVERAGE_IDS) {
-      const found = products.find((p) => p.id === id && p.available && !p.soldOut);
+      if (picked.length >= 6) break;
+      const found = products.find((p) => p.id === id && p.available && !p.soldOut && !seen.has(p.id));
       if (found) {
         seen.add(found.id);
         picked.push(found);
       }
     }
     if (picked.length < 6) {
-      const catSet = new Set(beverageCategories.map((c) => c.id));
       for (const p of products) {
         if (picked.length >= 6) break;
         if (catSet.has(p.categoryId) && p.available && !p.soldOut && !seen.has(p.id)) {
@@ -58,6 +67,10 @@ export const BeverageSection: React.FC<BeverageSectionProps> = ({
     }
     return picked;
   }, [products, beverageCategories]);
+
+  if (!catalogLoading && beverageCategories.length === 0 && featuredBeverages.length === 0) {
+    return null;
+  }
 
   const categoryMap = useMemo(
     () => new Map(categories.map((c) => [c.id, c])),

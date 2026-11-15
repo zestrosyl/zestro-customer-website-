@@ -245,8 +245,38 @@ export interface RestaurantSettings {
   currency: string;
   defaultLanguage: Language;
   acceptingOrders: boolean;
+  onlineOrderingEnabled?: boolean;
+  qrTableOrderingEnabled?: boolean;
   reviews: ReviewItem[];
   updatedAt?: unknown;
+}
+
+export interface LiveHomepageSection {
+  id: string;
+  label: string;
+  description: string;
+  visible: boolean;
+  order: number;
+}
+
+export interface LiveHomepageConfig {
+  heroImageUrl?: string;
+  heroHeadline?: string;
+  heroSubheadline?: string;
+  heroCtaText?: string;
+  promoBannerEnabled?: boolean;
+  promoBannerText?: string;
+  promoBannerCode?: string;
+  sections?: LiveHomepageSection[];
+}
+
+export interface LiveGalleryItem {
+  id: string;
+  title: string;
+  caption: string;
+  category: string;
+  imageUrl: string;
+  featured: boolean;
 }
 
 export type StaffRole = 'admin' | 'manager' | 'staff';

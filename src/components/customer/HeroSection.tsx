@@ -47,10 +47,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onOpenQrScanner,
 }) => {
   const {
+    language,
     t,
     isRtl,
+    homepage,
     detectedTableNumber,
-    detectedTableId,
+    detectedTableName,
     clearDetectedTable,
     waiterCalling,
     waiterCooldownSec,
@@ -66,7 +68,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const photoY = useTransform(scrollYProgress, [0, 1], ['0%', '14%']);
   const photoScale = useTransform(scrollYProgress, [0, 1], [1.03, 1.12]);
 
-  const headlineSegments = t.hero.headline
+  const effectiveHeadline =
+    language === 'en' && homepage?.heroHeadline?.trim()
+      ? homepage.heroHeadline.trim()
+      : t.hero.headline;
+  const effectiveSubheadline =
+    language === 'en' && homepage?.heroSubheadline?.trim()
+      ? homepage.heroSubheadline.trim()
+      : t.hero.subheadline;
+  const effectivePrimaryCta =
+    language === 'en' && homepage?.heroCtaText?.trim()
+      ? homepage.heroCtaText.trim()
+      : t.hero.exploreMenu;
+  const effectiveHeroImg = homepage?.heroImageUrl?.trim() || heroLuxuryImg;
+
+  const headlineSegments = effectiveHeadline
     .split(/(?<=[.।])\s+/)
     .filter(Boolean);
 
@@ -83,7 +99,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         className="absolute inset-0 pointer-events-none will-change-transform"
       >
         <SafeImage
-          src={heroLuxuryImg}
+          src={effectiveHeroImg}
           alt=""
           priority
           darkFallback
@@ -98,6 +114,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       />
 
       <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-24 pb-14 sm:pt-32 sm:pb-20">
+        {/* Live Admin Promo Banner */}
+        {homepage?.promoBannerEnabled && homepage.promoBannerText && (
+          <div className="mb-5 inline-flex flex-wrap items-center gap-2.5 bg-[#D7A65A]/15 border border-[#D7A65A]/45 text-[#F3EBDD] px-4 py-2 rounded-xl text-xs sm:text-sm font-medium backdrop-blur-xs">
+            <span>{homepage.promoBannerText}</span>
+            {homepage.promoBannerCode && (
+              <span className="px-2 py-0.5 rounded bg-[#D7A65A] text-[#101210] font-mono-tabular font-bold text-xs">
+                {homepage.promoBannerCode}
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Table QR Assignment & Waiter Call Strip */}
         {detectedTableNumber && (
           <motion.div
@@ -110,9 +138,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <Utensils className="w-4 h-4 text-[#D7A65A] shrink-0" />
               <span className="text-sm font-semibold truncate">
                 {t.hero.tableWelcome} {detectedTableNumber}
-                {detectedTableId && (
+                {detectedTableName && (
                   <span className="hidden sm:inline ms-2 text-xs font-mono-tabular text-[#A9A79F]">
-                    · {detectedTableId}
+                    · {detectedTableName}
                   </span>
                 )}
               </span>
@@ -211,7 +239,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             viewport={{ once: true, amount: 0.2 }}
             className="text-base sm:text-lg text-[#F3EBDD]/85 max-w-xl leading-relaxed font-normal"
           >
-            {t.hero.subheadline}
+            {effectiveSubheadline}
           </motion.p>
 
           {/* Primary + Secondary CTAs */}
@@ -228,7 +256,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               onClick={onExploreMenu}
               className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-[#D7A65A] text-[#101210] font-bold text-sm rounded-xl hover:bg-[#C49245] transition-colors min-h-[48px] whitespace-nowrap shrink-0 shadow-lg shadow-black/30 cursor-pointer"
             >
-              <span>{t.hero.exploreMenu}</span>
+              <span>{effectivePrimaryCta}</span>
               <ArrowRight className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
             </motion.button>
 

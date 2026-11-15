@@ -1,13 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 type User = { uid: string; displayName: string | null; email: string | null; photoURL: string | null };
-import {
-  INITIAL_CATEGORIES,
-  INITIAL_CUSTOMISATION_GROUPS,
-  INITIAL_PRODUCTS,
-  INITIAL_PROMOTIONS,
-  INITIAL_SETTINGS,
-  INITIAL_TABLES,
-} from '../data/initialMenu';
+import { INITIAL_SETTINGS } from '../data/initialMenu';
 import { Dictionary, TRANSLATIONS } from '../i18n/translations';
 import { parseTableQrPayload } from '../utils/tableQrParser';
 import { API_BASE, postJson } from '../services/liveApi';
@@ -18,6 +11,8 @@ import type {
   CustomerProfile,
   CustomisationGroup,
   Language,
+  LiveGalleryItem,
+  LiveHomepageConfig,
   LocalOrderHistoryEntry,
   LoyaltySummary,
   LoyaltyTier,
@@ -54,7 +49,11 @@ interface StoreContextValue {
   customisationGroups: CustomisationGroup[];
   promotions: Promotion[];
   settings: RestaurantSettings;
+  homepage: LiveHomepageConfig | null;
+  gallery: LiveGalleryItem[];
   catalogLoading: boolean;
+  catalogError: string | null;
+  reloadCatalog: () => void;
 
   cart: CartItem[];
   cartCount: number;
@@ -132,14 +131,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return 'en';
   });
 
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [customisationGroups, setCustomisationGroups] = useState<CustomisationGroup[]>(
-    INITIAL_CUSTOMISATION_GROUPS
-  );
-  const [promotions, setPromotions] = useState<Promotion[]>(INITIAL_PROMOTIONS);
+  // Never initialize or fall back to fake static products/categories/promotions.
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [customisationGroups, setCustomisationGroups] = useState<CustomisationGroup[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [settings, setSettings] = useState<RestaurantSettings>(INITIAL_SETTINGS);
+  const [homepage, setHomepage] = useState<LiveHomepageConfig | null>(null);
+  const [gallery, setGallery] = useState<LiveGalleryItem[]>([]);
   const [catalogLoading, setCatalogLoading] = useState<boolean>(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [catalogReloadNonce, setCatalogReloadNonce] = useState<number>(0);
 
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
@@ -196,6 +198,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setToast(null);
   }, []);
 
+  const reloadCatalog = useCallback(() => {
+    setCatalogReloadNonce((n) => n + 1);
+  }, []);
+
   const languageRef = useRef<Language>(language);
   useEffect(() => {
     languageRef.current = language;
@@ -236,33 +242,130 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [orderHistory]);
 
-  // Authentication and cloud customer accounts are intentionally disabled in this clean-start build.
-  useEffect(() => { setCustomerAuthLoading(false); }, []);
+  useEffect(() => {
+    setCustomerAuthLoading(false);
+  }, []);
 
+  // Live catalog fetch — surfaces API errors honestly instead of showing stale/fake menu data.
   useEffect(() => {
     let active = true;
-    fetch(`${API_BASE}/api/catalog`)
+    setCatalogLoading(true);
+    setCatalogError(null);
+
+    fetch(`${API_BASE}/api/catalog`, {
+      headers: { Accept: 'application/json' },
+    })
       .then(async (response) => {
-        if (!response.ok) throw new Error(`Catalog request failed (${response.status})`);
-        return response.json();
+        const body = (await response.json().catch(() => null)) as {
+          error?: string;
+          categories?: Category[];
+          products?: Product[];
+          customisationGroups?: CustomisationGroup[];
+          promotions?: Promotion[];
+          settings?: Partial<RestaurantSettings>;
+          homepage?: LiveHomepageConfig | null;
+          gallery?: LiveGalleryItem[];
+        } | null;
+
+        if (!response.ok || !body) {
+          throw new Error(
+            body?.error || `Unable to load live menu from server (HTTP ${response.status}).`
+          );
+        }
+        return body;
       })
-      .then((data: { categories?: Category[]; products?: Product[]; customisationGroups?: CustomisationGroup[]; promotions?: Promotion[]; settings?: Partial<RestaurantSettings> }) => {
+      .then((data) => {
         if (!active) return;
-        setCategories(Array.isArray(data.categories) ? data.categories : []);
-        setProducts(Array.isArray(data.products) ? data.products : []);
-        setCustomisationGroups(Array.isArray(data.customisationGroups) ? data.customisationGroups : []);
-        setPromotions(Array.isArray(data.promotions) ? data.promotions : []);
-        if (data.settings) setSettings((current) => ({ ...current, ...data.settings }));
+        const liveCategories = Array.isArray(data.categories) ? data.categories : [];
+        const liveProducts = Array.isArray(data.products) ? data.products : [];
+        const liveGroups = Array.isArray(data.customisationGroups) ? data.customisationGroups : [];
+        const livePromotions = Array.isArray(data.promotions) ? data.promotions : [];
+
+        setCategories(liveCategories);
+        setProducts(liveProducts);
+        setCustomisationGroups(liveGroups);
+        setPromotions(livePromotions);
+        setHomepage(data.homepage || null);
+        setGallery(Array.isArray(data.gallery) ? data.gallery : []);
+        if (data.settings) {
+          setSettings((current) => ({ ...current, ...data.settings }));
+        }
+        setCatalogError(null);
+
+        // Reconcile persisted cart items with live server prices and availability
+        setCart((prevCart) => {
+          if (prevCart.length === 0) return prevCart;
+          const reconciled: CartItem[] = [];
+          let droppedCount = 0;
+
+          for (const ci of prevCart) {
+            const liveProd = liveProducts.find((p) => p.id === ci.productId);
+            if (!liveProd || !liveProd.available || liveProd.soldOut) {
+              droppedCount += 1;
+              continue;
+            }
+            const liveVariant = ci.variantId
+              ? liveProd.variants?.find((v) => v.id === ci.variantId)
+              : undefined;
+            if (ci.variantId && !liveVariant) {
+              droppedCount += 1;
+              continue;
+            }
+            const liveUnitPrice = liveVariant ? liveVariant.price : liveProd.price;
+            const liveCustomisations: SelectedCustomisation[] = ci.customisations
+              .map((sel) => {
+                const grp = liveGroups.find((g) => g.id === sel.groupId);
+                const opt = grp?.options.find((o) => o.id === sel.optionId);
+                if (!grp || !opt) return null;
+                return {
+                  ...sel,
+                  price: opt.price,
+                };
+              })
+              .filter((x): x is SelectedCustomisation => Boolean(x));
+
+            reconciled.push({
+              ...ci,
+              productName: liveProd.name,
+              image: liveProd.image || ci.image,
+              unitPrice: liveUnitPrice,
+              ...(liveVariant ? { variantLabel: liveVariant.label } : {}),
+              customisations: liveCustomisations,
+            });
+          }
+
+          if (droppedCount > 0) {
+            window.setTimeout(() => {
+              showToast(
+                `${droppedCount} unavailable item(s) were removed from your saved cart.`,
+                'info'
+              );
+            }, 0);
+          }
+
+          return reconciled;
+        });
       })
-      .catch((error) => {
-        // Keep the existing static catalogue as a resilience fallback while the API is unavailable.
-        console.error('ZESTRO live catalog unavailable; using local catalogue fallback.', error);
+      .catch((error: unknown) => {
+        if (!active) return;
+        console.error('ZESTRO live catalog load failed:', error);
+        setCategories([]);
+        setProducts([]);
+        setPromotions([]);
+        setCatalogError(
+          error instanceof Error
+            ? error.message
+            : 'Unable to connect to the live menu service. Please check your connection and retry.'
+        );
       })
       .finally(() => {
         if (active) setCatalogLoading(false);
       });
-    return () => { active = false; };
-  }, []);
+
+    return () => {
+      active = false;
+    };
+  }, [catalogReloadNonce, showToast]);
 
   const applyResolvedTable = useCallback(
     (tblId: string, tblNumber: string, tblName?: string | null) => {
@@ -298,20 +401,29 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
 
       try {
-        const resolved = await postJson<{ tableId: string; tableNumber: string; tableName: string }>('/api/tables/verify', {
+        const resolved = await postJson<{
+          tableId: string;
+          tableNumber: string;
+          tableName: string;
+        }>('/api/tables/verify', {
           tableId: parsed.tableId,
           tableNumber: parsed.tableNumber,
         });
         applyResolvedTable(resolved.tableId, resolved.tableNumber, resolved.tableName);
-        showToast(
-          dict.qrScanner.verifiedBody.replace('{table}', resolved.tableName),
-          'success'
-        );
-        return { ok: true, tableId: resolved.tableId, tableNumber: resolved.tableNumber, tableName: resolved.tableName };
+        showToast(dict.qrScanner.verifiedBody.replace('{table}', resolved.tableName), 'success');
+        return {
+          ok: true,
+          tableId: resolved.tableId,
+          tableNumber: resolved.tableNumber,
+          tableName: resolved.tableName,
+        };
       } catch (error) {
         return {
           ok: false,
-          error: error instanceof Error ? error.message : dict.qrScanner.tableNotFound.replace('{id}', parsed.tableId),
+          error:
+            error instanceof Error
+              ? error.message
+              : dict.qrScanner.tableNotFound.replace('{id}', parsed.tableNumber),
         };
       }
     },
@@ -336,13 +448,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, []);
 
-  // Detect Table QR (?table=01 or previously scanned session table)
+  // Verify ?table=... URL parameter or sessionStorage table against the live D1 database on mount
   useEffect(() => {
+    let active = true;
     const params = new URLSearchParams(window.location.search);
     const rawTable = params.get('table');
     let candidateId: string | null = null;
     let candidateNum: string | null = null;
-    let candidateName: string | null = null;
 
     if (rawTable) {
       const parsed = parseTableQrPayload(rawTable);
@@ -357,12 +469,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const saved = JSON.parse(savedRaw) as {
             tableId?: string;
             tableNumber?: string;
-            tableName?: string;
           };
           if (saved.tableId && saved.tableNumber) {
             candidateId = saved.tableId;
             candidateNum = saved.tableNumber;
-            candidateName = saved.tableName || null;
           }
         }
       } catch {
@@ -372,12 +482,98 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (!candidateId || !candidateNum) return;
 
-    const fallbackMatch = INITIAL_TABLES.find((t) => t.id === candidateId);
-    setDetectedTableNumber(candidateNum);
-    setDetectedTableId(candidateId);
-    setDetectedTableName(candidateName || fallbackMatch?.name || `Table ${candidateNum}`);
+    postJson<{ tableId: string; tableNumber: string; tableName: string }>('/api/tables/verify', {
+      tableId: candidateId,
+      tableNumber: candidateNum,
+    })
+      .then((resolved) => {
+        if (!active) return;
+        applyResolvedTable(resolved.tableId, resolved.tableNumber, resolved.tableName);
+      })
+      .catch(() => {
+        if (!active) return;
+        clearDetectedTable();
+        if (rawTable) {
+          const dict = TRANSLATIONS[languageRef.current];
+          showToast(
+            dict.qrScanner.tableNotFound.replace('{id}', candidateNum || rawTable),
+            'error'
+          );
+        }
+      });
 
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [applyResolvedTable, clearDetectedTable, showToast]);
+
+  // Poll live order status updates for active orders in orderHistory
+  useEffect(() => {
+    const syncActiveOrderStatuses = async () => {
+      const activeEntries = orderHistoryRef.current.filter(
+        (entry) => entry.status !== 'completed' && entry.status !== 'cancelled'
+      );
+      if (activeEntries.length === 0) return;
+
+      const orderRefs = activeEntries.map((e) => e.orderRef).filter(Boolean);
+      const orderIds = activeEntries.map((e) => e.orderId).filter(Boolean);
+
+      try {
+        const result = await postJson<{
+          orders?: Array<{ id?: string; orderId?: string; orderRef: string; status: OrderStatus }>;
+        }>('/api/orders/status', {
+          orderRefs,
+          orderIds,
+        });
+        const liveOrders = Array.isArray(result.orders) ? result.orders : [];
+        if (liveOrders.length === 0) return;
+
+        const statusByRef = new Map<string, OrderStatus>();
+        const statusById = new Map<string, OrderStatus>();
+        for (const row of liveOrders) {
+          if (row.orderRef) statusByRef.set(row.orderRef.toUpperCase(), row.status);
+          const resolvedId = row.orderId || row.id;
+          if (resolvedId) statusById.set(resolvedId, row.status);
+        }
+
+        setOrderHistory((prev) => {
+          let changed = false;
+          const next = prev.map((entry) => {
+            const liveStatus =
+              statusById.get(entry.orderId) ||
+              (entry.orderRef ? statusByRef.get(entry.orderRef.toUpperCase()) : undefined);
+            if (!liveStatus || liveStatus === entry.status) return entry;
+
+            changed = true;
+            const prevKnown = knownOrderStatusesRef.current[entry.orderId];
+            knownOrderStatusesRef.current[entry.orderId] = liveStatus;
+            if (prevKnown && prevKnown !== liveStatus) {
+              const dict = TRANSLATIONS[languageRef.current];
+              const statusLabel = dict.history.statuses[liveStatus] || liveStatus;
+              window.setTimeout(() => {
+                showToast(`${entry.orderRef}: ${statusLabel}`, 'info', {
+                  title: dict.history.title,
+                  actionLabel: dict.history.title,
+                  actionType: 'open_orders',
+                });
+              }, 0);
+            }
+            return { ...entry, status: liveStatus };
+          });
+          return changed ? next : prev;
+        });
+      } catch {
+        // Silent background poll retry on next interval
+      }
+    };
+
+    const initialTimer = window.setTimeout(syncActiveOrderStatuses, 3000);
+    const interval = window.setInterval(syncActiveOrderStatuses, 20000);
+    return () => {
+      window.clearTimeout(initialTimer);
+      window.clearInterval(interval);
+    };
+  }, [showToast]);
 
   // Waiter cooldown ticker
   useEffect(() => {
@@ -394,7 +590,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [detectedTableId]);
 
   const triggerWaiterCall = useCallback(async () => {
-    if (!detectedTableId || !detectedTableNumber) return;
+    if (!detectedTableId && !detectedTableNumber) return;
     const dict = TRANSLATIONS[language];
     if (waiterCooldownSec > 0) {
       showToast(dict.hero.waiterCooldown, 'info');
@@ -405,19 +601,35 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const response = await fetch(`${API_BASE}/api/waiter-calls`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tableId: detectedTableId, requestType: 'Table Assistance' }),
+        body: JSON.stringify({
+          tableId: detectedTableId || undefined,
+          tableNumber: detectedTableNumber || undefined,
+          requestType: 'Table Assistance',
+        }),
       });
-      const result = await response.json() as { ok?: boolean; error?: string };
+      const result = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        tableNumber?: string;
+      };
       if (!response.ok || !result.ok) {
-        showToast(result.error || dict.hero.waiterCooldown, 'info');
+        showToast(
+          result.error || 'Unable to send waiter call right now. Please try again.',
+          response.status === 429 ? 'info' : 'error'
+        );
         if (response.status === 429) setWaiterCooldownSec(60);
         return;
       }
-      localStorage.setItem(`${WAITER_COOLDOWN_KEY}_${detectedTableId}`, String(Date.now()));
+      if (detectedTableId) {
+        localStorage.setItem(`${WAITER_COOLDOWN_KEY}_${detectedTableId}`, String(Date.now()));
+      }
       setWaiterCooldownSec(60);
-      showToast(`${dict.hero.waiterCalled} ${detectedTableNumber}`, 'success');
+      showToast(
+        `${dict.hero.waiterCalled} ${result.tableNumber || detectedTableNumber || ''}`.trim(),
+        'success'
+      );
     } catch {
-      showToast(dict.hero.waiterCooldown, 'error');
+      showToast('Network error sending waiter call. Please check your connection.', 'error');
     } finally {
       setWaiterCalling(false);
     }
@@ -425,6 +637,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const addToCart = useCallback(
     (item: Omit<CartItem, 'cartItemId'>) => {
+      const liveProd = products.find((p) => p.id === item.productId);
+      if (!liveProd || !liveProd.available || liveProd.soldOut) {
+        showToast('This item is currently unavailable.', 'error');
+        return;
+      }
+
       const signature = JSON.stringify({
         p: item.productId,
         v: item.variantId || '',
@@ -465,7 +683,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const name = item.productName[language] || item.productName.en;
       showToast(`${name} +${item.quantity}`, 'success');
     },
-    [language, showToast]
+    [language, products, showToast]
   );
 
   const updateCartQty = useCallback((cartItemId: string, qty: number) => {
@@ -494,14 +712,44 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const repeatLastOrder = useCallback(() => {
     if (lastOrderCart.length === 0) return;
-    setCart(
-      lastOrderCart.map((item, idx) => ({
-        ...item,
+    const dict = TRANSLATIONS[language];
+    const availableItems: CartItem[] = [];
+    let skipped = 0;
+
+    lastOrderCart.forEach((oldItem, idx) => {
+      const liveProd = products.find((p) => p.id === oldItem.productId);
+      if (!liveProd || !liveProd.available || liveProd.soldOut) {
+        skipped += 1;
+        return;
+      }
+      const matchedVariant = oldItem.variantId
+        ? liveProd.variants?.find((v) => v.id === oldItem.variantId)
+        : undefined;
+      if (oldItem.variantId && !matchedVariant) {
+        skipped += 1;
+        return;
+      }
+      availableItems.push({
+        ...oldItem,
         cartItemId: `ci_rep_${Date.now()}_${idx}`,
-      }))
-    );
-    showToast(TRANSLATIONS[language].history.reorderedSuccess, 'success');
-  }, [lastOrderCart, language, showToast]);
+        productName: liveProd.name,
+        image: liveProd.image || oldItem.image,
+        unitPrice: matchedVariant ? matchedVariant.price : liveProd.price,
+      });
+    });
+
+    if (availableItems.length === 0) {
+      showToast(dict.history.allUnavailable, 'error');
+      return;
+    }
+
+    setCart(availableItems);
+    if (skipped > 0) {
+      showToast(`${dict.history.reorderedSuccess} (${skipped} ${dict.history.unavailableSkipped})`, 'info');
+    } else {
+      showToast(dict.history.reorderedSuccess, 'success');
+    }
+  }, [lastOrderCart, language, products, showToast]);
 
   const addOrderHistoryEntry = useCallback((entry: LocalOrderHistoryEntry) => {
     knownOrderStatusesRef.current[entry.orderId] = entry.status;
@@ -524,6 +772,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const matchedVariant = oldItem.variantId
           ? liveProd.variants?.find((v) => v.id === oldItem.variantId)
           : undefined;
+        if (oldItem.variantId && !matchedVariant) {
+          skippedCount += 1;
+          continue;
+        }
         const unitPrice = matchedVariant ? matchedVariant.price : liveProd.price;
 
         availableItems.push({
@@ -645,12 +897,32 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   const accountUnavailable = async (): Promise<void> => {
-    throw new Error('Customer accounts are temporarily unavailable while the website backend is being rebuilt.');
+    throw new Error('Customer accounts are temporarily unavailable; guest ordering and order tracking work immediately.');
   };
-  const signUpWithEmail = useCallback(async (_input: { name: string; phone?: string; email: string; password: string; defaultAddress?: string }) => accountUnavailable(), []);
-  const signInWithEmail = useCallback(async (_input: { email: string; password: string }) => accountUnavailable(), []);
+  const signUpWithEmail = useCallback(
+    async (_input: {
+      name: string;
+      phone?: string;
+      email: string;
+      password: string;
+      defaultAddress?: string;
+    }) => accountUnavailable(),
+    []
+  );
+  const signInWithEmail = useCallback(
+    async (_input: { email: string; password: string }) => accountUnavailable(),
+    []
+  );
   const signInWithGoogleCustomer = useCallback(async () => accountUnavailable(), []);
-  const saveCustomerProfile = useCallback(async (_input: { displayName: string; phone: string; defaultAddress?: string; preferredOrderType?: OrderType }) => accountUnavailable(), []);
+  const saveCustomerProfile = useCallback(
+    async (_input: {
+      displayName: string;
+      phone: string;
+      defaultAddress?: string;
+      preferredOrderType?: OrderType;
+    }) => accountUnavailable(),
+    []
+  );
   const resetCustomerPassword = useCallback(async (_email: string) => accountUnavailable(), []);
   const signOutCustomer = useCallback(async () => {
     setCustomerUser(null);
@@ -732,10 +1004,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const cartSubtotal = useMemo(
     () =>
-      cart.reduce((sum, item) => {
-        const extras = item.customisations.reduce((s, c) => s + c.price, 0);
-        return sum + (item.unitPrice + extras) * item.quantity;
-      }, 0),
+      Number(
+        cart
+          .reduce((sum, item) => {
+            const extras = item.customisations.reduce((s, c) => s + c.price, 0);
+            return sum + (item.unitPrice + extras) * item.quantity;
+          }, 0)
+          .toFixed(2)
+      ),
     [cart]
   );
 
@@ -754,7 +1030,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         customisationGroups,
         promotions,
         settings,
+        homepage,
+        gallery,
         catalogLoading,
+        catalogError,
+        reloadCatalog,
         cart,
         cartCount,
         cartSubtotal,

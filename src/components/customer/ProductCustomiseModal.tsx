@@ -78,7 +78,12 @@ export const ProductCustomiseModal: React.FC<ProductCustomiseModalProps> = ({
   const unitTotal = basePrice + extrasTotal;
   const grandLineTotal = unitTotal * quantity;
 
+  const isUnavailable = !product.available || Boolean(product.soldOut);
   const mealSidesMissing = Boolean(product.mealSideRule) && selectedSideIds.length !== 2;
+  const requiredGroupMissing = linkedGroups.some(
+    (grp) => grp.required && (selectedOptions[grp.id] || []).length === 0
+  );
+  const cannotAdd = isUnavailable || mealSidesMissing || requiredGroupMissing;
 
   const toggleOption = (groupId: string, optionId: string, type: 'single' | 'multiple', maxSelect = 10) => {
     setSelectedOptions((prev) => {
@@ -105,7 +110,7 @@ export const ProductCustomiseModal: React.FC<ProductCustomiseModalProps> = ({
   };
 
   const handleConfirm = (openCheckoutImmediately: boolean) => {
-    if (mealSidesMissing) return;
+    if (cannotAdd) return;
 
     const sideNames = selectedSideIds
       .map((sid) => MEAL_SIDES_OPTIONS.find((s) => s.id === sid))
@@ -359,25 +364,33 @@ export const ProductCustomiseModal: React.FC<ProductCustomiseModalProps> = ({
             </div>
 
             <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end flex-wrap">
-              <button
-                type="button"
-                disabled={mealSidesMissing}
-                onClick={() => handleConfirm(false)}
-                className="px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl border border-[#101B17] text-[#101B17] font-semibold text-xs sm:text-sm hover:bg-[#E7DFD0] disabled:opacity-40 disabled:cursor-not-allowed min-h-[42px] whitespace-nowrap cursor-pointer"
-              >
-                {t.customiser.addToCart}
-              </button>
-              <button
-                type="button"
-                disabled={mealSidesMissing}
-                onClick={() => handleConfirm(true)}
-                className="px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#101B17] text-[#F3EBDD] font-semibold text-xs sm:text-sm hover:bg-[#1D2922] disabled:opacity-40 disabled:cursor-not-allowed min-h-[42px] whitespace-nowrap flex items-center gap-2 cursor-pointer"
-              >
-                <span>{t.customiser.orderNow}</span>
-                <span className="font-mono-tabular text-[#D7A65A]">
-                  {settings.currency}{grandLineTotal}
+              {isUnavailable ? (
+                <span className="px-4 py-2.5 rounded-xl bg-red-100 text-red-800 font-semibold text-xs sm:text-sm">
+                  {t.menu.soldOut}
                 </span>
-              </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    disabled={cannotAdd}
+                    onClick={() => handleConfirm(false)}
+                    className="px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl border border-[#101B17] text-[#101B17] font-semibold text-xs sm:text-sm hover:bg-[#E7DFD0] disabled:opacity-40 disabled:cursor-not-allowed min-h-[42px] whitespace-nowrap cursor-pointer"
+                  >
+                    {t.customiser.addToCart}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={cannotAdd}
+                    onClick={() => handleConfirm(true)}
+                    className="px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#101B17] text-[#F3EBDD] font-semibold text-xs sm:text-sm hover:bg-[#1D2922] disabled:opacity-40 disabled:cursor-not-allowed min-h-[42px] whitespace-nowrap flex items-center gap-2 cursor-pointer"
+                  >
+                    <span>{t.customiser.orderNow}</span>
+                    <span className="font-mono-tabular text-[#D7A65A]">
+                      {settings.currency}{grandLineTotal}
+                    </span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </motion.div>

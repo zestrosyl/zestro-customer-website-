@@ -13,12 +13,14 @@ import {
   RestaurantTable,
 } from '../types';
 
-export const IMG_HERO = '/src/assets/images/zestro_hero_feast_1794594788896.jpg';
-export const IMG_BURGER = '/src/assets/images/zestro_burger_signature_1794594788162.jpg';
-export const IMG_PIZZA = '/src/assets/images/zestro_pizza_artisan_1794594789442.jpg';
-export const IMG_CHICKEN_MEALS = '/src/assets/images/zestro_fried_chicken_meals_1794594790682.jpg';
-export const IMG_BOWL_PASTA = '/src/assets/images/zestro_rice_bowl_pasta_1794594789487.jpg';
-export const IMG_BEVERAGES = '/src/assets/images/zestro_coffee_beverages_1794594791369.jpg';
+export {
+  IMG_HERO,
+  IMG_BURGER,
+  IMG_PIZZA,
+  IMG_CHICKEN_MEALS,
+  IMG_BOWL_PASTA,
+  IMG_BEVERAGES,
+};
 export const OFFICIAL_LOGO_PATH = '/assets/aistudio/FB_IMG_1794593749464_090db6e9.jpg';
 
 export const MEAL_SIDES_OPTIONS = [

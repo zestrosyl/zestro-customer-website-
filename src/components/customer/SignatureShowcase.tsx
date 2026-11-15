@@ -81,25 +81,57 @@ export const SignatureShowcase: React.FC<SignatureShowcaseProps> = ({
     const picked: Product[] = [];
     const seen = new Set<string>();
 
+    const availableFood = products.filter((p) => {
+      if (!p.available || p.soldOut) return false;
+      const cat = categoryMap.get(p.categoryId);
+      return !cat || cat.type !== 'beverage';
+    });
+
+    // 1. Prioritize live Admin-curated featured and popular dishes
+    for (const item of availableFood) {
+      if (picked.length >= 7) break;
+      if ((item.featured || item.popular) && !seen.has(item.id)) {
+        seen.add(item.id);
+        picked.push(item);
+      }
+    }
+
+    // 2. Match known signature IDs or category slugs if present
     for (const target of SIGNATURE_TARGETS) {
+      if (picked.length >= 7) break;
       const match =
-        products.find(
-          (p) => p.id === target.preferredId && p.available && !p.soldOut
+        availableFood.find(
+          (p) => p.id === target.preferredId && !seen.has(p.id)
         ) ||
-        products.find(
-          (p) =>
-            p.categoryId === target.fallbackCategory &&
-            p.available &&
-            !p.soldOut &&
-            !seen.has(p.id)
+        availableFood.find(
+          (p) => p.categoryId === target.fallbackCategory && !seen.has(p.id)
         );
       if (match && !seen.has(match.id)) {
         seen.add(match.id);
         picked.push(match);
       }
     }
+
+    // 3. Fill remaining showcase slots with live available food dishes (one per category first)
+    const usedCats = new Set(picked.map((p) => p.categoryId));
+    for (const item of availableFood) {
+      if (picked.length >= 7) break;
+      if (!seen.has(item.id) && !usedCats.has(item.categoryId)) {
+        seen.add(item.id);
+        usedCats.add(item.categoryId);
+        picked.push(item);
+      }
+    }
+    for (const item of availableFood) {
+      if (picked.length >= 7) break;
+      if (!seen.has(item.id)) {
+        seen.add(item.id);
+        picked.push(item);
+      }
+    }
+
     return picked;
-  }, [products]);
+  }, [products, categoryMap]);
 
   if (!catalogLoading && signatureItems.length === 0) return null;
 
