@@ -1,0 +1,41 @@
+name: Customer Supabase auth validation
+
+on:
+  push:
+    branches:
+      - feat/supabase-auth-integration-2026-11-17
+  pull_request:
+    branches:
+      - live-backend/nov-14-2026
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Generate and validate lockfile
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Tests
+        run: npm test
+      - name: Commit generated lockfile
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: sync customer auth dependency lockfile"
+            git push
+          fi

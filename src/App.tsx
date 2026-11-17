@@ -36,7 +36,7 @@ function sectionIdFromCustomerPathname(pathname: string): string {
 }
 
 const ZestroContent: React.FC = () => {
-  const { toast, dismissToast, customerUser, homepage } = useStore();
+  const { toast, dismissToast, customerUser, homepage, passwordRecoveryPending } = useStore();
   const isSectionVisible = useCallback(
     (sectionId: string) => {
       if (!homepage?.sections || !Array.isArray(homepage.sections)) return true;
@@ -58,9 +58,17 @@ const ZestroContent: React.FC = () => {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authInitialMode, setAuthInitialMode] = useState<'signup' | 'signin' | 'reset'>('signup');
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [accountInitialTab, setAccountInitialTab] = useState<'orders' | 'profile'>('orders');
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
+
+  useEffect(() => {
+    if (passwordRecoveryPending) {
+      setAuthInitialMode('reset');
+      setAuthModalOpen(true);
+    }
+  }, [passwordRecoveryPending]);
 
   const scrollToCustomerSection = useCallback((sectionId: string) => {
     if (sectionId === 'home') {
@@ -220,7 +228,8 @@ const ZestroContent: React.FC = () => {
 
       <CustomerAuthModal
         open={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
+        initialMode={authInitialMode}
+        onClose={() => { setAuthModalOpen(false); setAuthInitialMode('signup'); }}
         onAuthenticated={(maybeIncomplete) => {
           setAccountInitialTab(maybeIncomplete ? 'profile' : 'orders');
           setAccountModalOpen(true);

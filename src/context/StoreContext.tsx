@@ -4,6 +4,8 @@ import { INITIAL_SETTINGS } from '../data/initialMenu';
 import { Dictionary, TRANSLATIONS } from '../i18n/translations';
 import { parseTableQrPayload } from '../utils/tableQrParser';
 import { API_BASE, postJson } from '../services/liveApi';
+import { supabase } from '../lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 import type {
   CartItem,
@@ -75,6 +77,8 @@ interface StoreContextValue {
   customerUser: User | null;
   customerProfile: CustomerProfile | null;
   customerAuthLoading: boolean;
+  passwordRecoveryPending: boolean;
+  updateCustomerPassword: (password: string) => Promise<void>;
   customerOrders: Order[];
   signUpWithEmail: (input: {
     name: string;
@@ -183,6 +187,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [customerUser, setCustomerUser] = useState<User | null>(null);
   const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
   const [customerAuthLoading, setCustomerAuthLoading] = useState(true);
+  const [passwordRecoveryPending, setPasswordRecoveryPending] = useState(false);
   const [customerOrders, setCustomerOrders] = useState<Order[]>([]);
 
   const showToast = useCallback(
@@ -245,9 +250,78 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [orderHistory]);
 
-  useEffect(() => {
-    setCustomerAuthLoading(false);
+  const applySupabaseUser = useCallback((user: SupabaseUser | null) => {
+    if (!user) {
+      setCustomerUser(null);
+      setCustomerProfile(null);
+      setCustomerOrders([]);
+      return;
+    }
+
+    // User metadata is only used for editable customer profile display fields.
+    // Authorization and restaurant permissions must always be enforced server-side.
+    const metadata = (user.user_metadata || {}) as Record<string, unknown>;
+    const displayName = String(metadata.full_name || metadata.name || user.email?.split('@')[0] || 'Customer');
+    const phone = metadata.phone ? String(metadata.phone) : '';
+    const defaultAddress = metadata.default_address ? String(metadata.default_address) : '';
+    const preferred = String(metadata.preferred_order_type || '');
+    const preferredOrderType = ['dine_in', 'takeaway', 'delivery'].includes(preferred)
+      ? (preferred as OrderType)
+      : undefined;
+
+    setCustomerUser({
+      uid: user.id,
+      displayName,
+      email: user.email || null,
+      photoURL: metadata.avatar_url ? String(metadata.avatar_url) : null,
+    });
+    setCustomerProfile({
+      uid: user.id,
+      email: user.email || '',
+      displayName,
+      phone,
+      defaultAddress,
+      preferredOrderType,
+      photoUrl: metadata.avatar_url ? String(metadata.avatar_url) : undefined,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+    });
   }, []);
+
+  useEffect(() => {
+    if (!supabase) {
+      setCustomerAuthLoading(false);
+      return;
+    }
+
+    let active = true;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) return;
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecoveryPending(true);
+      applySupabaseUser(session?.user || null);
+      setCustomerAuthLoading(false);
+    });
+
+    void supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          showToast('Unable to restore your account session. Please sign in again.', 'error');
+        }
+        applySupabaseUser(data.session?.user || null);
+      })
+      .catch(() => {
+        if (active) showToast('Unable to restore your account session. Please sign in again.', 'error');
+      })
+      .finally(() => {
+        if (active) setCustomerAuthLoading(false);
+      });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, [applySupabaseUser, showToast]);
 
   // Live catalog fetch — surfaces API errors honestly instead of showing stale/fake menu data.
   useEffect(() => {
@@ -902,39 +976,110 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [customisationGroups, language, products, showToast]
   );
 
-  const accountUnavailable = async (): Promise<void> => {
-    throw new Error('Customer accounts are temporarily unavailable; guest ordering and order tracking work immediately.');
+  const requireSupabase = () => {
+    if (!supabase) {
+      throw new Error('Customer authentication is not configured on this deployment. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.');
+    }
+    return supabase;
   };
+
   const signUpWithEmail = useCallback(
-    async (_input: {
+    async (input: {
       name: string;
       phone?: string;
       email: string;
       password: string;
       defaultAddress?: string;
-    }) => accountUnavailable(),
-    []
+    }) => {
+      const client = requireSupabase();
+      const { data, error } = await client.auth.signUp({
+        email: input.email.trim().toLowerCase(),
+        password: input.password,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            full_name: input.name.trim(),
+            phone: input.phone?.trim() || '',
+            default_address: input.defaultAddress?.trim() || '',
+          },
+        },
+      });
+      if (error) throw error;
+      if (!data.session) {
+        throw new Error('Your account has been created. Please check your email and confirm your address before signing in.');
+      }
+      applySupabaseUser(data.user);
+    },
+    [applySupabaseUser]
   );
+
   const signInWithEmail = useCallback(
-    async (_input: { email: string; password: string }) => accountUnavailable(),
-    []
+    async (input: { email: string; password: string }) => {
+      const client = requireSupabase();
+      const { data, error } = await client.auth.signInWithPassword({
+        email: input.email.trim().toLowerCase(),
+        password: input.password,
+      });
+      if (error) throw error;
+      applySupabaseUser(data.user);
+    },
+    [applySupabaseUser]
   );
-  const signInWithGoogleCustomer = useCallback(async () => accountUnavailable(), []);
+
+  const signInWithGoogleCustomer = useCallback(async () => {
+    const client = requireSupabase();
+    const { error } = await client.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) throw error;
+  }, []);
+
   const saveCustomerProfile = useCallback(
-    async (_input: {
+    async (input: {
       displayName: string;
       phone: string;
       defaultAddress?: string;
       preferredOrderType?: OrderType;
-    }) => accountUnavailable(),
-    []
+    }) => {
+      const client = requireSupabase();
+      const { data, error } = await client.auth.updateUser({
+        data: {
+          full_name: input.displayName.trim(),
+          phone: input.phone.trim(),
+          default_address: input.defaultAddress?.trim() || '',
+          preferred_order_type: input.preferredOrderType || '',
+        },
+      });
+      if (error) throw error;
+      applySupabaseUser(data.user);
+    },
+    [applySupabaseUser]
   );
-  const resetCustomerPassword = useCallback(async (_email: string) => accountUnavailable(), []);
-  const signOutCustomer = useCallback(async () => {
-    setCustomerUser(null);
-    setCustomerProfile(null);
-    setCustomerOrders([]);
+
+  const resetCustomerPassword = useCallback(async (email: string) => {
+    const client = requireSupabase();
+    const { error } = await client.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: window.location.origin + '/?recovery=1',
+    });
+    if (error) throw error;
   }, []);
+
+  const updateCustomerPassword = useCallback(async (password: string) => {
+    const client = requireSupabase();
+    if (password.length < 8) throw new Error('Password must be at least 8 characters.');
+    const { error } = await client.auth.updateUser({ password });
+    if (error) throw error;
+    setPasswordRecoveryPending(false);
+  }, []);
+
+  const signOutCustomer = useCallback(async () => {
+    if (supabase) {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    }
+    applySupabaseUser(null);
+  }, [applySupabaseUser]);
 
   const getOrderLoyaltyPoints = useCallback(
     (orderTotal: number, status?: OrderStatus): number => {
@@ -1058,6 +1203,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         customerUser,
         customerProfile,
         customerAuthLoading,
+        passwordRecoveryPending,
+        updateCustomerPassword,
         customerOrders,
         signUpWithEmail,
         signInWithEmail,

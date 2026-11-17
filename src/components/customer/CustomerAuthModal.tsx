@@ -22,7 +22,7 @@ import { BrandLogo } from '../BrandLogo';
 
 interface CustomerAuthModalProps {
   open: boolean;
-  initialMode?: 'signup' | 'signin';
+  initialMode?: 'signup' | 'signin' | 'reset';
   onClose: () => void;
   onAuthenticated?: (isNewOrIncomplete?: boolean) => void;
 }
@@ -59,9 +59,11 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
     signInWithEmail,
     signInWithGoogleCustomer,
     resetCustomerPassword,
+    updateCustomerPassword,
+    passwordRecoveryPending,
   } = useStore();
 
-  const [mode, setMode] = useState<'signup' | 'signin' | 'forgot'>(initialMode);
+  const [mode, setMode] = useState<'signup' | 'signin' | 'forgot' | 'reset'>(initialMode);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -73,15 +75,16 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [suggestSignIn, setSuggestSignIn] = useState(false);
   const [resetSentEmail, setResetSentEmail] = useState<string | null>(null);
+  const googleAuthEnabled = (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_ENABLE_GOOGLE_AUTH === 'true';
 
   useEffect(() => {
     if (open) {
-      setMode(initialMode);
+      setMode(passwordRecoveryPending ? 'reset' : initialMode);
       setErrorMsg(null);
       setSuggestSignIn(false);
       setResetSentEmail(null);
     }
-  }, [open, initialMode]);
+  }, [open, initialMode, passwordRecoveryPending]);
 
   const handleClose = () => {
     setErrorMsg(null);
@@ -94,6 +97,17 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
   const mapAuthError = (err: unknown): string => {
     const code = extractFirebaseCode(err);
     setSuggestSignIn(false);
+
+    if (err instanceof Error && code.toLowerCase().includes('your account has been created')) {
+      return code;
+    }
+    if (code.toLowerCase().includes('user already registered')) {
+      setSuggestSignIn(true);
+      return 'An account with this email already exists. Try signing in instead.';
+    }
+    if (code.toLowerCase().includes('invalid login credentials')) {
+      return 'Incorrect email or password. Please check your credentials and try again.';
+    }
 
     if (
       code.includes('operation-not-allowed') ||
@@ -165,6 +179,27 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
     setSuggestSignIn(false);
 
     const trimmedEmail = email.trim();
+
+    if (mode === 'reset') {
+      if (password.length < 8) {
+        setErrorMsg('Password must be at least 8 characters.');
+        return;
+      }
+      setSubmitting(true);
+      try {
+        await updateCustomerPassword(password);
+        setPassword('');
+        setMode('signin');
+        onClose();
+        onAuthenticated?.(false);
+      } catch (err) {
+        setErrorMsg(mapAuthError(err));
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       setErrorMsg(t.account.errors.emailInvalid);
       return;
@@ -183,8 +218,8 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMsg(t.account.errors.passwordMin);
+    if (password.length < 8) {
+      setErrorMsg('Password must be at least 8 characters.');
       return;
     }
 
@@ -230,6 +265,8 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
       ? t.account.signUpTitle
       : mode === 'forgot'
       ? t.account.resetTitle
+      : mode === 'reset'
+      ? 'Choose a new password'
       : t.account.signInTitle;
 
   return (
@@ -292,7 +329,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
               </div>
 
               {/* Mode Switcher Tabs (Sign Up / Sign In) */}
-              {mode !== 'forgot' && (
+              {mode !== 'forgot' && mode !== 'reset' && (
                 <div className="grid grid-cols-2 gap-1 p-1 bg-[#E7DFD0] rounded-xl border border-[#101B17]/12">
                   {(['signup', 'signin'] as const).map((tabId) => {
                     const active = mode === tabId;
@@ -348,7 +385,17 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
                 </div>
               )}
 
-              {mode === 'forgot' ? (
+                            {mode === 'reset' ? (
+                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                  <div className="space-y-1.5">
+                    <label htmlFor="cust-reset-new-password" className="block text-xs font-semibold text-[#101210]">New password</label>
+                    <input id="cust-reset-new-password" type="password" required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3.5 py-3 rounded-xl border border-[#101B17]/18 bg-white text-sm text-[#101210] focus:outline-none focus:ring-2 focus:ring-[#101B17] min-h-[46px]" />
+                  </div>
+                  <motion.button type="submit" whileTap={{ scale: 0.985 }} disabled={submitting} className="w-full py-3.5 px-5 rounded-xl bg-[#101B17] text-[#F3EBDD] font-semibold text-sm disabled:opacity-60 min-h-[48px]">
+                    {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update password'}
+                  </motion.button>
+                </form>
+              ) : mode === 'forgot' ? (
                 <div className="space-y-4">
                   {resetSentEmail ? (
                     <div className="bg-white rounded-2xl border border-[#101B17]/15 p-5 space-y-4">
@@ -439,8 +486,10 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
                 </div>
               ) : (
                 <>
-                  {/* Instant Google Sign-Up / Sign-In */}
-                  <motion.button
+                  {googleAuthEnabled && (
+                    <>
+                      {/* Instant Google Sign-Up / Sign-In */}
+                      <motion.button
                     type="button"
                     whileTap={{ scale: 0.985 }}
                     disabled={googleLoading || submitting}
@@ -470,7 +519,9 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
                       </svg>
                     )}
                     <span>{t.account.continueGoogle}</span>
-                  </motion.button>
+                      </motion.button>
+                    </>
+                  )}
 
                   <div className="relative flex items-center justify-center">
                     <span className="h-px w-full bg-[#101B17]/15" />
@@ -585,7 +636,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
                           type={showPassword ? 'text' : 'password'}
                           required
                           autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                          minLength={6}
+                          minLength={8}
                           maxLength={128}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
