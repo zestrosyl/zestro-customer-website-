@@ -95,6 +95,17 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
     const code = extractFirebaseCode(err);
     setSuggestSignIn(false);
 
+    if (err instanceof Error && code.toLowerCase().includes('your account has been created')) {
+      return code;
+    }
+    if (code.toLowerCase().includes('user already registered')) {
+      setSuggestSignIn(true);
+      return 'An account with this email already exists. Try signing in instead.';
+    }
+    if (code.toLowerCase().includes('invalid login credentials')) {
+      return 'Incorrect email or password. Please check your credentials and try again.';
+    }
+
     if (
       code.includes('operation-not-allowed') ||
       code.includes('PASSWORD_LOGIN_DISABLED')
@@ -183,8 +194,8 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMsg(t.account.errors.passwordMin);
+    if (password.length < 8) {
+      setErrorMsg('Password must be at least 8 characters.');
       return;
     }
 
