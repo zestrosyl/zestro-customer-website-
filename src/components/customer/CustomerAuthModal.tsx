@@ -178,10 +178,6 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
     setSuggestSignIn(false);
 
     const trimmedEmail = email.trim();
-    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setErrorMsg(t.account.errors.emailInvalid);
-      return;
-    }
 
     if (mode === 'reset') {
       if (password.length < 8) {
@@ -200,6 +196,11 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
       } finally {
         setSubmitting(false);
       }
+      return;
+    }
+
+    if (mode !== 'reset' && (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail))) {
+      setErrorMsg(t.account.errors.emailInvalid);
       return;
     }
 
