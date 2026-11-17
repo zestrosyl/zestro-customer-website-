@@ -22,7 +22,7 @@ import { BrandLogo } from '../BrandLogo';
 
 interface CustomerAuthModalProps {
   open: boolean;
-  initialMode?: 'signup' | 'signin';
+  initialMode?: 'signup' | 'signin' | 'reset';
   onClose: () => void;
   onAuthenticated?: (isNewOrIncomplete?: boolean) => void;
 }
@@ -59,9 +59,11 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
     signInWithEmail,
     signInWithGoogleCustomer,
     resetCustomerPassword,
+    updateCustomerPassword,
+    passwordRecoveryPending,
   } = useStore();
 
-  const [mode, setMode] = useState<'signup' | 'signin' | 'forgot'>(initialMode);
+  const [mode, setMode] = useState<'signup' | 'signin' | 'forgot' | 'reset'>(initialMode);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -76,12 +78,12 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
 
   useEffect(() => {
     if (open) {
-      setMode(initialMode);
+      setMode(passwordRecoveryPending ? 'reset' : initialMode);
       setErrorMsg(null);
       setSuggestSignIn(false);
       setResetSentEmail(null);
     }
-  }, [open, initialMode]);
+  }, [open, initialMode, passwordRecoveryPending]);
 
   const handleClose = () => {
     setErrorMsg(null);
@@ -181,6 +183,26 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
       return;
     }
 
+    if (mode === 'reset') {
+      if (password.length < 8) {
+        setErrorMsg('Password must be at least 8 characters.');
+        return;
+      }
+      setSubmitting(true);
+      try {
+        await updateCustomerPassword(password);
+        setPassword('');
+        setMode('signin');
+        onClose();
+        onAuthenticated?.(false);
+      } catch (err) {
+        setErrorMsg(mapAuthError(err));
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     if (mode === 'forgot') {
       setSubmitting(true);
       try {
@@ -241,6 +263,8 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
       ? t.account.signUpTitle
       : mode === 'forgot'
       ? t.account.resetTitle
+      : mode === 'reset'
+      ? 'Choose a new password'
       : t.account.signInTitle;
 
   return (
@@ -303,7 +327,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
               </div>
 
               {/* Mode Switcher Tabs (Sign Up / Sign In) */}
-              {mode !== 'forgot' && (
+              {mode !== 'forgot' && mode !== 'reset' && (
                 <div className="grid grid-cols-2 gap-1 p-1 bg-[#E7DFD0] rounded-xl border border-[#101B17]/12">
                   {(['signup', 'signin'] as const).map((tabId) => {
                     const active = mode === tabId;
@@ -359,7 +383,17 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
                 </div>
               )}
 
-              {mode === 'forgot' ? (
+                            {mode === 'reset' ? (
+                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                  <div className="space-y-1.5">
+                    <label htmlFor="cust-reset-new-password" className="block text-xs font-semibold text-[#101210]">New password</label>
+                    <input id="cust-reset-new-password" type="password" required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3.5 py-3 rounded-xl border border-[#101B17]/18 bg-white text-sm text-[#101210] focus:outline-none focus:ring-2 focus:ring-[#101B17] min-h-[46px]" />
+                  </div>
+                  <motion.button type="submit" whileTap={{ scale: 0.985 }} disabled={submitting} className="w-full py-3.5 px-5 rounded-xl bg-[#101B17] text-[#F3EBDD] font-semibold text-sm disabled:opacity-60 min-h-[48px]">
+                    {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update password'}
+                  </motion.button>
+                </form>
+              ) : mode === 'forgot' ? (
                 <div className="space-y-4">
                   {resetSentEmail ? (
                     <div className="bg-white rounded-2xl border border-[#101B17]/15 p-5 space-y-4">
@@ -596,7 +630,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
                           type={showPassword ? 'text' : 'password'}
                           required
                           autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                          minLength={6}
+                          minLength={8}
                           maxLength={128}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
