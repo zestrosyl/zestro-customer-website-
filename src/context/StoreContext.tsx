@@ -77,6 +77,8 @@ interface StoreContextValue {
   customerUser: User | null;
   customerProfile: CustomerProfile | null;
   customerAuthLoading: boolean;
+  passwordRecoveryPending: boolean;
+  updateCustomerPassword: (password: string) => Promise<void>;
   customerOrders: Order[];
   signUpWithEmail: (input: {
     name: string;
@@ -185,6 +187,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [customerUser, setCustomerUser] = useState<User | null>(null);
   const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
   const [customerAuthLoading, setCustomerAuthLoading] = useState(true);
+  const [passwordRecoveryPending, setPasswordRecoveryPending] = useState(false);
   const [customerOrders, setCustomerOrders] = useState<Order[]>([]);
 
   const showToast = useCallback(
@@ -292,8 +295,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     let active = true;
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) return;
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecoveryPending(true);
       applySupabaseUser(session?.user || null);
       setCustomerAuthLoading(false);
     });
@@ -1056,9 +1060,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const resetCustomerPassword = useCallback(async (email: string) => {
     const client = requireSupabase();
     const { error } = await client.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-      redirectTo: window.location.origin,
+      redirectTo: window.location.origin + '/?recovery=1',
     });
     if (error) throw error;
+  }, []);
+
+  const updateCustomerPassword = useCallback(async (password: string) => {
+    const client = requireSupabase();
+    if (password.length < 8) throw new Error('Password must be at least 8 characters.');
+    const { error } = await client.auth.updateUser({ password });
+    if (error) throw error;
+    setPasswordRecoveryPending(false);
   }, []);
 
   const signOutCustomer = useCallback(async () => {
@@ -1191,6 +1203,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         customerUser,
         customerProfile,
         customerAuthLoading,
+        passwordRecoveryPending,
+        updateCustomerPassword,
         customerOrders,
         signUpWithEmail,
         signInWithEmail,
