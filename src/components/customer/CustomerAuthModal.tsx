@@ -75,6 +75,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [suggestSignIn, setSuggestSignIn] = useState(false);
   const [resetSentEmail, setResetSentEmail] = useState<string | null>(null);
+  const googleAuthEnabled = (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_ENABLE_GOOGLE_AUTH === 'true';
 
   useEffect(() => {
     if (open) {
@@ -485,8 +486,10 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
                 </div>
               ) : (
                 <>
-                  {/* Instant Google Sign-Up / Sign-In */}
-                  <motion.button
+                  {googleAuthEnabled && (
+                    <>
+                      {/* Instant Google Sign-Up / Sign-In */}
+                      <motion.button
                     type="button"
                     whileTap={{ scale: 0.985 }}
                     disabled={googleLoading || submitting}
@@ -516,7 +519,9 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
                       </svg>
                     )}
                     <span>{t.account.continueGoogle}</span>
-                  </motion.button>
+                      </motion.button>
+                    </>
+                  )}
 
                   <div className="relative flex items-center justify-center">
                     <span className="h-px w-full bg-[#101B17]/15" />
