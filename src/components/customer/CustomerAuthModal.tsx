@@ -199,7 +199,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
       return;
     }
 
-    if (mode !== 'reset' && (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail))) {
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       setErrorMsg(t.account.errors.emailInvalid);
       return;
     }
