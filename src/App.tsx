@@ -229,7 +229,7 @@ const ZestroContent: React.FC = () => {
       <CustomerAuthModal
         open={authModalOpen}
         initialMode={authInitialMode}
-        onClose={() => setAuthModalOpen(false)}
+        onClose={() => { setAuthModalOpen(false); setAuthInitialMode('signup'); }}
         onAuthenticated={(maybeIncomplete) => {
           setAccountInitialTab(maybeIncomplete ? 'profile' : 'orders');
           setAccountModalOpen(true);
